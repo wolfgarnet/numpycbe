@@ -1,0 +1,412 @@
+In this chapter, we will walk through the implementation of the
+dispatcher and the Python module NumPyCBE. We will give a
+conceptual walk through of the shader system as well.
+
+The NumPyCBE module was implemented to be able to run our benchmark applications
+through Python, using the same functionality as if the applications
+were run through a modification of the original NumPy.
+
+\section{The Dispatcher}
+
+In this section the implementation of the dispatcher is examined. The
+dispatcher has two major steps, which will be examined
+chronological. First the start up phase and then when acting as a
+state machine.
+
+\subsection{Start Up Phase}
+
+The dispatcher is started with a single argument. This argument is a
+pointer to an \EA{}, where the \PPE\ places the operation
+structure. The operation structure, is a structure that identifies a
+NumPy operation and will be discussed later.
+
+As it was discussed in chapter \ref{chapter:dispatcher}, the first
+task for the dispatcher is to organize the \LS{}. The following list
+sums up the demands for the \LS{}.
+
+\begin{itemize}
+\item{Space for the dispatcher itself}
+\item{Space for shaders}
+\item{Space for local memory for the dispatcher}
+\item{Space for data blocks}
+\end{itemize}
+
+The space for the dispatcher can first be resolved when it is
+implemented, but it should not consume more than 16KB.
+
+The space for the data blocks was determined to be 32KB for each, that
+is, 192KB in total, for six data blocks. This ensures, that exactly
+six $64 \times 64$ blocks of double precision floating points can
+reside in the \LS{}.
+
+This leaves 48KB for the shaders and the local memory. The space for
+the shaders are resolved by developing them. Basically, taking the
+shader that requires the most space and dictate the space limits for
+shaders to be that size. Of course, multiplying that with the number
+of shaders required.
+
+Due to the very sequential nature of Python and NumPy, one operation
+is first executed when the previous is done. Practically, it does not
+give any extra performance to double buffer the SPU shaders. The size
+of the shader is typically a fraction of the data for one
+operation. Though the time transferring the shaders are limited, it is
+often nice to organize the shaders prior to a function. For example,
+the function \function{solve} requires a handful of shaders and
+setting them up inside function loops, transferring them and executing
+them over and over, can give very large code sizes. We have therefore
+decided, for this usage of the dispatcher, to have four buffers for
+shaders.
+
+\subsubsection{One Dispatcher, Multiple Layout Schemes}
+
+The diverse needs for the dispatcher has led to an implementation,
+accompanying them all as good as possible. Given a set of definitions,
+the dispatcher can be build with an almost arbitrary layout.
+
+This master thesis focuses on single precision computations, therefore
+the data block buffers does not need to be exceptionally large and
+thus the remaining memory of the \LS{}, can be used elsewhere. If
+double precision was used, the dispatcher could be build to accompany
+those.
+
+It is not necessary to have buffers for four shaders, so for another
+use, the dispatcher could be build for only one. The size of the
+shader buffer is sized by experimentation and the actual need. This
+size is fixed at 12 KB.
+
+Figure \ref{fig:lspartition} depicts the layout of the \LS{} using one
+buffer for shaders and buffers large enough for $64 \times 64$ double
+precision data blocks. Figure \ref{fig:lspartitionused} shows the
+layout of the \LS\ used in this master thesis. Giving enough space for
+$64 \times 64$ single precision data blocks, four shader buffers and
+plenty of local shader memory for array meta data.
+
+\figscale{figures/ls_v2.pdf}{Layout of the local storage for double precision}{fig:lspartition}{0.65}
+
+\figscale{figures/ls_v2_fourshaders.pdf}{Layout of the local storage used in this thesis}{fig:lspartitionused}{0.65}
+
+\subsection{The State Machine}
+
+When the layout of the \LS\ is organized, the dispatcher waits for the
+\PPE\ to signal an operation. This is done by mailing an integer from
+the \PPE{}. Each number mailed from the \PPE\ determines a specific
+state for the dispatcher and the dispatcher transfers the operation
+structure from the \PPE{}.
+
+The structure identifies the shader for the specific operation, its
+size, the operands and how many \SPEv{'s} used. The structure can be
+seen in figure \ref{fig:operationt}.
+
+\figscale{figures/operation_t2.pdf}{The operation structure}{fig:operationt}{0.65}
+
+As it can be seen, the three objects and the two scalars are
+separated, though their meta data is the same. This separation is done
+to be able to distinguish between objects containing more than one
+data element, i. e. arrays, and a single scalar.
+
+The main difference is location in the \LS{}. Any array object should
+be put into the designated block areas. That is, the last six fields
+in figure \ref{fig:lspartition} or \ref{fig:lspartitionused}.
+
+The number of \SPE{}'s is also given as a field in the structure. This
+gives a specific \SPE\ information about how to orchestrate the data
+for parallel computations. It is therefore not necessary to utilize all
+the \SPE{}'s for one operation. Especially, if the number of blocks
+for a given operand is less than the total number of \SPE{}'s. Though,
+as argued before, Python is executing operations sequentially and
+therefore any superfluous \SPE{}'s can not easily be utilized
+elsewhere.
+
+The \EA\ of the shader, in the operation structure, lets the
+dispatcher transfer the actual shader to the \LS{}. When transferred,
+it is run with one of two function pointers.
+
+By examining the functionality of NumPy, two prototypes for function
+pointers to shaders are needed. These two prototypes can be seen in
+listings \ref{lst:prototypes}.
+
+\examplecode{code/prototypes.c}{The two prototypes for SPU shaders used in this thesis}{lst:prototypes}
+
+As it can be seen, one thing differs. The \variable{EA\_result} in
+\function{runr()}. This prototype is used when a NumPy function
+returns a single scalar value, rather than an entire array.
+
+The need for this division is, when multiple \SPE{}'s computes their
+own part of the result. In the \function{sum} shader, each \SPE\ sums
+their parts, but each of the \SPE{}'s intermediate results should be
+combined, not stored in the same scalar value given by the operation
+structure. For these types of operations, the \PPE\ establishes space
+in main memory for each of the \SPE{}'s results, and then the
+\PPE\ combines the result. When a shader needs to return an array, a
+pointer to this array is given as a field in the operation structure.
+
+The \variable{EA\_result} address is mailed to the dispatcher from
+the \PPE{}, before the dispatcher runs the shader, thus letting the
+shader know where to put the result after calculations.
+
+The state machine can be examined in figure \ref{fig:statemachine}. It
+shows how to make the dispatcher behave and interpret the given
+operation. States 0 and 100 is the most commonly used, they receives
+an operation and executes it. State 200 and 400 receives an operation
+and a shader, with no return value and with return value,
+respectively, without executing it and state 300 and 500 executes the
+shader. These two last states makes it easier to implement composite
+functionality. It is possible to transfer multiple shaders without
+running them and running shaders, already in the \LS{}, without having
+to transfer them first. Lastly, state 999 terminates the dispatcher
+process.
+
+\figscalerotate{figures/statemachine_v4.pdf}{The SPE state machine}{fig:statemachine}{0.55}{90}
+
+\subsection{Putting It All Together}
+
+A diagram of the complete process can be seen in figure
+\ref{fig:speppe}.
+
+The relation between the \PPE\ and the \SPE\ is given by the initial
+argument, which is a pointer to a certain part of the main
+memory. When an \SPE\ receives a new state from the \PPE{}, through
+mailboxes, it knows where to get the operation, because the argument
+points to an address space, where a pointer to the operation is. From
+the operation, the \SPE\ can get further information of the operands
+and the given shader for this operation. The address of the
+\variable{SPE pointer address} is given to the \SPE\ as an
+argument. The value of \variable{SPE pointer address} is set by the
+\PPE\ to point to an operation, from where the dispatcher can obtain
+the address of the operation.
+
+When an operation is in progress, the SPU shader transfers the
+operands and transmits the final result.
+
+\figscale{figures/speppe.pdf}{The PPE SPE relation}{fig:speppe}{0.45}
+
+\section{SPU Shaders}
+
+As stated in section \refthis{sec:specs}, the SPU shader has full
+control over data transmissions. This implies, that the SPU shader
+control double, or multi buffering, of data. Instead of letting the
+dispatcher handle this, the individual SPU shader can decide which
+method that fits best in a given situation.
+
+This is also true for the orchestration of the data. This may be
+static or dynamic, bag of tasks or streaming. Which ever method that
+works best in the given situation, problem size or with the
+computational requirements.
+
+
+\subsection{Generic Functionality}
+\label{sec:genericfuncs}
+
+Much of the ndarray core functionality provided by NumPy are binary
+or unary functions. All of which are element wise
+computations. Typically, they are composed of one of the following:
+
+\begin{itemize}
+\item{Array - Array}
+\item{Array - Scalar}
+\item{Scalar - Array}
+\end{itemize}
+
+For example, array multiplication can either multiply two arrays
+together, element wise, or multiply a scalar to each of the elements
+in the array. That is, scaling the array by a constant factor.
+
+In these functionalities, each \SPE\ acquires a certain number of data
+blocks, given the number of total \SPE{}'s used and its given
+index. Moreover, almost all of the functionalities returns their
+results in an array. Given these identical specifications, a common
+framework can be implemented to generalize these kinds of operations.
+
+
+In code listing \ref{lst:genericshader}, in appendix
+\refthisnotitle{app:gbff}, the framework for the generic binary shader
+function for two arrays is shown. As it can be seen the function has a
+preliminary unresolved inclusion, which, by a parser, is resolved
+prior to compilation.
+
+Also, the actual function call \function{\_compute}, has its arguments
+resolved with the same parser. This parser is discussed later.
+
+
+
+An example of the \function{\_compute} function can be seen in code
+listing \ref{lst:genericadd}, in appendix
+\refthisnotitle{app:g-addition}, where the element wise addition for
+two arrays is shown.
+
+
+
+This is done by a Python script, parsing a template C file. For each
+of the functionalities, a header file defines the same function name,
+but implements different functionality according to the NumPy
+function. The header file inclusion is replaced by Python in the main
+template code.
+
+\function{Multiply}, \function{add}, \function{divide} and
+\function{less\_equal} are examples of functions that can take both
+arrays and scalars as arguments and returns an array as a
+result. \function{Sum} is an example of a function that takes a single
+array as argument and produces a single scalar as result. 
+
+Filler functions are also examples of functions that can be
+generalized. For example \function{zeros} and \function{random}, they
+only take one array as argument and returns the same array filled with
+the values needed. 
+
+\subsection{The Object File Parser}
+\label{sec:oparser}
+
+The object file parser is a tool, written in Python, to parse the
+object file given by compiling a C source file. It extracts the
+numerical values of the dumped object file, given by
+\function{spu-objdump} to form a header file, ready to be included
+directly in a \CBE\ program and a binary file, that can be loaded at
+run time, by a \CBE\ program. This sequence of values can be
+transferred to the dispatcher as shader.
+
+\section{NumPyCBE}
+
+As a consequence of how long time it took to analyze and work with
+NumPy, we decided, as stated in section \ref{chapter:numpy}, to
+develop our own Python module with the same functionality as
+NumPy. This section will give a quick overview of the implementation
+of this module.
+
+The module must allow Python applications to utilize the Cell BE. To
+meet this goal, the dispatcher and shader system was used in the same
+way as if it was used with a ported version of NumPy.
+
+The module should be able to execute a Python program like the one
+shown in code listing \ref{lst:mc}. Note that if infix operators were
+used in this program, it would have the same syntax as one written for
+the original NumPy.
+
+\examplecode{code/mc.py}{Monte Carlo example}{lst:mc}
+
+Since all the functionality for working with ndarrays is implemented
+in C files in the NumPyCBE module, there is no need for representing
+Python objects of entire ndarrays in Python. It is only necessary to
+store pointers to ndarrays and actual scalars in Python. In this way
+regular scalar-scalar operations can be handled directly in Python,
+while the rest is handled by C code in NumPyCBE. Therefore, the only
+values that are passed between Python and the module are scalars and
+pointers to ndarrays.
+
+Each function should be callable from Python must be defined in the
+module.  This is done by creating a structure like the one shown in
+code listing \ref{lst:pymethoddef}. In this example only one function,
+\function{add}, is defined and the number of arguments to the
+functions are set to be variable.
+
+The structure
+of function definitions is passed to the \function{initnumpycbe(...)} function in the module, which can be seen in code listing \ref{lst:initnumpycbe}.
+This function is by convention the first function called by Python when a module named NumPyCBE is imported.
+
+\examplecode{code/pymethoddef.py}{Python method definitions}{lst:pymethoddef}
+\examplecode{code/initnumpycbe.py}{Initialization function for the NumPyCBE module}{lst:initnumpycbe}
+
+When the \function{initnumpycbe(...)} function is called, the module is registered by name in Python.
+Notice that a call to start up the dispatcher is included in the function.
+In this way the dispatcher is started on each SPE when the \function{numpycbe} module is imported into a Python application.
+
+When a function in the module is called from Python, zero, one or more
+\variable{PyObject}'s are given as parameters.  These must be parsed
+in the receiving function and a \variable{PyObject} must be returned
+as the result of calling the function.  As mentioned, we only need
+pointers and scalars in NumPyCBE. An example of how the parsing and
+handling of input parameters and return value are done, can be seen in
+code listing \ref{lst:add}. In this example the variables \variable{a}
+and \variable{b} are used to hold pointers to
+\variable{PyArrayObject}'s. The actual addition is done in the
+function \function{run30(...)}(which is discussed in section
+\refthis{sec:runshaders}). Notice that the return value in this case
+is the address of the first operand, wrapped in a \variable{PyObject}.
+
+\examplecode{code/add.c}{add function}{lst:add}
+
+When all necessary functions are defined and implemented in the c-file \file{numpycbe.c},
+the module can be installed be executing the following statement: \texttt{``install setup.py install --prefix=.''}.
+This uses the file \texttt{setup.py}, shown in code listing \ref{lst:setup} to install the NumPyCBE module.
+Note that the \texttt{libspe2} library is added for linking in the setup file, since this functionality is needed
+to work with the SPE's on the Cell BE.
+
+\examplecode{code/setup.py}{setup.py file for NumPyCBE}{lst:setup}
+
+Notice that the \texttt{prefix} keyword is only used to install the module in a specific location.
+
+After installation, the module can be imported as shown in the
+beginning of the test program in listing \ref{lst:mc}.
+
+\subsection{Running Shaders}
+\label{sec:runshaders}
+
+When NumPyCBE is running a shader, it requires the actual shader,
+given in an array, and the size of the array in bytes. It must
+differentiate between functions returning scalar values and
+functions returning arrays, as discussed earlier in this chapter.
+
+Furthermore, shaders require up to three arrays and two scalars as
+arguments, for both versions. If two different shaders needs the same
+number of arguments, they can be run identically. This can generalize
+to a set of functions, running shaders with a different number of
+arguments. As it was seen in listing \ref{lst:add}, three arrays were
+needed and zero scalars. Thus calling the function
+\function{run30()}. If a shader needs to arrays and one scalar, the
+function \function{run21()}, should be called. 
+
+The shaders returning scalars, have an almost identical counterpart,
+named \function{runrxx()}, where the x's are substituted with the
+number of arrays and the number of scalars in the argument list. The
+``r'' identifies, that the function returns a scalar value.
+
+\subsubsection{Dynamic SPE Handling}
+
+The functionality, mentioned before, also handles the data
+orchestration indirectly. This means, that it determines how many
+\SPE{}'s are going to be used. Primarily based on how much data is
+present in the given ndarrays. Some NumPy functions require even less
+work, even though much data is present. Multiplying a sliced ndarray,
+could be an example. When special circumstances are required, the
+NumPyCBE function itself handles the \SPE\ contact.
+
+%\subsection{FHB Tool}
+
+%Several functions are needed to work with \FHBv{ing}, especially when
+%creating an array using the layout. Therefore, a library was developed
+%to ease the tasks when working with \FHB{}. 
+
+%This library contains functionality creating arrays in different ways,
+%both as vectors and matrices: Creating arrays with one default value
+%for all elements, creating arrays within a specific range, with a
+%%given step size, creating arrays with no default value, that is only
+%initialize the memory, filling arrays with certain values, extracting
+%columns from matrices and much more.
+
+\subsection{Handling FHB}
+
+To handle \FHB\ ndarrays on the \PPE{}, a library was created. This
+library takes care of creating and destroying the ndarrays, as well as
+convenience functionality, such as extracting a column from a matrix,
+calculating block offset and indexes, and printing ndarrays.
+
+\subsection{Allocation/deallocation}
+Currently, NumPyCBE does not make use of Python's object deallocation mechanism.
+Therefore allocation and deallocation of arrays and scalars must be done explicitly
+in the Python application.
+
+\section{Limitations}
+
+In our implementation, we use the fact that only 256MB(actually an
+average of 150MB) of RAM is available, thus giving us a problem size
+of two matrices of maximum $4096 \times 4096$ single precision
+elements. Therefore, a maximum of 4096 pointers needs to be used in
+the field \variable{blockData} in the data structure. This requires
+16KB of storage for each matrix used and is easily managed into the
+\LS{}.
+
+For arbitrarily large matrices, this fact can not be used, because the
+size of the meta data would exceed the \LS{}. A solution to this,
+could be to transfer parts of the \variable{blockData} array as
+needed. This would not require much restructuring of the shaders, but
+would require extra logic and possible extra data transfers of the
+meta data.

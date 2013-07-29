@@ -1,0 +1,414 @@
+
+For this master thesis we have selected three different tests:
+\textit{Monte Carlo $\pi$}, \textit{linear equation
+  solver}(solve) and \SOR{}. These three tests should explore the
+  possibilities of the
+\CBE\ as best as possible and give the opportunity for utilizing the
+programming techniques described in \REFSEC{sec:considerations}.
+
+%section \ref{sec:considerations} on page \pageref{sec:considerations}.
+
+They will also show tests of NumPy parts using both simple and
+composite functionality, from \REFSEC{sec:performanceoncell}.
+
+The shaders developed for these tests are all using a static
+orchestration of their problem. This particular segregation is primarily
+because we know how many \SPEv{'s} are available, but also because
+the test programs will operate on data for easy static orchestration.
+
+Furthermore, the individual shaders utilizes at least double buffering
+and \SIMD\ operations. Where possible, dual issue is used and excess
+transfers are removed.
+
+
+\section{Monte Carlo}
+
+Monte Carlo is a method that relies on repeated random sampling. It is
+a type of computational algorithm and can be used to estimate $\pi$.
+
+Having a circle with radius $1$ inclosed in a square, the area of the
+circle is $\pi$ and the area of the square would be $4$. The circle
+fills up $\frac{\pi}{4}$ of the square, that is the ratio of the
+circle to the square. The area of the circle can be calculated by
+multiplying the ratio with the area of the square, that is
+$\frac{\pi}{4} \cdot 4 = \pi$. 
+
+
+%See figure \ref{fig:circle}.
+
+
+%\figscale{figures/circle_in_square.pdf}{A unit circle inclosed in a unit square}{fig:circle}{0.4}
+%// PIC OF THIS
+
+The area of the circle can be approximated using Monte Carlo
+$\pi$. Imagine shooting randomly at the square, the probability of
+hitting the circle, is exactly $\frac{\pi}{4}$. So, shooting $n$ times
+at the square, $\frac{\pi}{4} \cdot n$ of them will hit the circle. If
+$i$ shots hit the the circle, the ratio would be $\frac{i}{n}$, which
+is the circles area, $\pi$.
+
+\subsection{Implementation}
+
+The Monte Carlo $\pi$ test program was based on Brian Vinters
+implementation. Only a slight adjustment was made to it, since NumPy
+natively uses double precision. This should ensure that the precision
+in the test programs were identical.
+
+
+
+
+When implementing the Monte Carlo $\pi$ a set of points, (x, y), must
+be generated. Because most random number generators produce numbers in
+the range $[0, 1[$, the problem can be reduced to the positive
+    quadrant of the unit square and circle. This implies, that
+    the generated point (x, y) must satisfy $x^2 + y^2 \le 1$.
+
+Given this, five shaders must be implemented:
+
+\begin{itemize}
+\item{Array Random Filling}
+\item{Array Multiplication(or Array Square)}
+\item{Array Addition}
+\item{Array Less Equal}
+\item{Array Summation}
+\end{itemize}
+
+The result from the summation can trivially be multiplied by $4$ and
+divided by $n$ by Python, wherefore no further shader functionality is
+needed.
+
+%In section \refthis{sec:mc_code}, the Monte Carlo test program can be
+%reviewed. Both the original and the slightly adjusted NumPyCBE
+%version.
+
+%\subsection{Cell Blade Center and Cell Clusters}
+%
+%This test should be applicable to a Cell Blade Center and even
+%clusters of these. The key thing to notice is, that the data is
+%generated on each \SPE{}, local to its own \PPE{}. While processing
+%the operations, no data is needed to be transferred between the Cell
+%processors, only when the final result is joined.
+
+
+\section{Solving Systems of Linear Equations}
+
+Solving systems of linear equations of the form,
+
+\[
+Ax = B
+\]
+
+\noindent with $n$ equations and $n$ unknowns and where $A$ is the coefficient matrix, $x$ is a vector of
+unknowns and $B$ is the right hand side, it can be solved with
+Gaussian elimination.
+
+This requires $O(n^3)$ operations for each set of right hand sides. If
+the same coefficient matrix should be used to solve several other
+linear equations, LU factorizations should be used. An LU
+factorization also takes $O(n^3)$ time and solving it only takes
+$O(n^2)$, but the LU factorization is only computed once.
+
+The \LAPACK\ routine \function{xGESV} does exactly this. It takes two
+matrices as input, the coefficient matrix $A$ and the set of right
+hand sides, matrix $B$. $B$ contains the columns of results for each
+of the equations. At the end of the routine, each column of $B$ will
+contain the values of the unknowns for each set of right hand sides.
+
+First the theory behind the solver is examined and then it is
+explained how it was implemented.
+
+\subsubsection{Blocked LU Factorization Algorithm}
+
+The \LAPACK\ routine \function{xGESV} solves the equation $Ax = B$,
+with an LU factorization with partial pivoting and row interchanges,
+of the form,
+
+\[
+Ax = B \quad \Rightarrow \quad PLUx = B
+\]
+
+\noindent where $P$ is a permutation matrix, $L$ is a lower triangular
+matrix with a unit diagonal and $U$ is and upper triangular matrix
+with a non-unit diagonal. $L$ and $U$ are of the form,
+
+\[
+\mathbf{L} = \left[
+\begin{array}{ccccc}
+1       & 0     & \cdots &   \cdots  & 0 \\
+M_{21}  & 1      &        &          &\vdots \\
+M_{31}  & M_{32} & \ddots &          &  \vdots \\
+\vdots & \vdots & \ddots &  1       & 0 \\
+M_{m1}  & M_{m2} & \cdots  & M_{mm-1} &  1 \\
+\end{array}
+\right]
+\quad
+\mathbf{U} = \left[
+\begin{array}{ccccc}
+M_{11}  & M_{12} & M_{13} &  \cdots  & M_{1m} \\
+0       & M_{22} & M_{23}  & \cdots  & M_{2m} \\
+\vdots  &        & \ddots &  \ddots &  \vdots \\
+\vdots  &        &        &  M_{m-1m-1} & M_{m-1m} \\
+0       & \cdots & \cdots  & 0      &  M_{mm} \\
+\end{array}
+\right]
+\]
+
+The first thing to do is to factorize $A$. This is done by the
+\LAPACK\ routine \function{xSGETRF}. This function uses a blocked
+algorithm to compute the LU factorization, for a block size of $r$ on
+a matrix of size $M \times N$. The overall idea is illustrated in
+figure \ref{fig:blockedlu}. It should be noted, that A(0,0), for
+example, is a sub matrix.
+
+%// Show an illustration of this
+\figscale{figures/a-lxu.pdf}{Block LU factorization, where A is an $r \times r$ sub matrix, A(0,1) is $r \times N-r$, A(1,0) is $M-r \times r$ and A(1,1) is $M-r \times N-r$}{fig:blockedlu}{0.5}
+
+The idea is to compute the block columns of $L$ and block rows of $U$
+iteratively. From \cite{LU_blocked_algorithm} we have,
+
+\begin{align}
+L(0,0)U(0,0) &= A(0,0) \label{lu1} \\
+L(1,0)U(0,0) &= A(1,0) \label{lu2} \\
+L(0,0)U(0,1) &= A(0,1) \label{lu3} \\
+L(1,0)U(0,1) + L(1,1)U(1,1) &= A(1,1) \label{lu4}
+\end{align}
+
+\noindent Where equation \ref{lu1} and equation \ref{lu2} performs the
+LU factorization of the first column block, $A(0,0)$ and
+$A(1,0)$. With these results $U(0,1)$ can be calculated.
+
+Equation \ref{lu4} can be rearranged to 
+
+\[
+A'(1,1) = A(1,1) - L(1,0)U(0,1) = L(1,1)U(1,1)
+\]
+
+Finding $L(1,1)$ and $U(1,1)$ can iteratively be reduced to finding
+the LU factorization of $A'(1,1)$ in $K$ steps, where $K = min(\lceil
+M / r \rceil, \lceil N / r \rceil)$. After $k$ of $K$ steps, the first
+$k \cdot r$ column of L and rows of U have been evaluated. The matrix
+A have been updated as shown in figure \ref{fig:updatelu}. The sub
+matrix B is $M - kr \times r$ and C is $r \times N - (k-1)r$. The
+following steps proceeds as follows:
+
+\begin{enumerate}
+\item{Factorize B to form the next sub matrix of L. This evaluates sub matrices L0 and L1}
+\item{Solve the triangular system $L0 \cdot U1 = C$ to get the next sub matrix of U}
+\item{Update the trailing sub matrix E, replacing it with $E' = E - L1 \cdot U1$ }
+\end{enumerate}
+
+\figscale{figures/LU.pdf}{Reducing LU factorization to finding A}{fig:updatelu}{0.7}
+
+
+
+When the LU factorization is found, the system can be solved. This is
+done by forward substitution on the lower triangular matrix and back
+substitution on the upper triangular matrix\cite{mathworld-lu}.
+
+%The substition for the lower triangular matrix looks like,
+%
+%\[
+%x_i = b_i - 
+%\]
+
+\subsection{Implementation}
+
+Using the blocked algorithm, a series of \BLAS\ routines are
+required. Namely, \function{xSCAL}, \function{xSWAP},
+\function{IxAMAX}, \function{xGER}, \function{xTRSM} and
+\function{xGEMM}. Also, the \LAPACK\ routine {xLASWP} is used. A quick note on the functions, can be seen in \refthisnosection{chapter:acronyms}.
+
+The implementation of the equation solver is directly based on the
+\LAPACK\ routine, though we use row major \FHB\ matrices and \LAPACK\ uses
+column major. Since the \LAPACK\ implementation is sequential and not
+vectorized, the algorithm had to be reworked to fully use the
+potential of the \CBE{}.
+
+Some of the \BLAS\ sub routines are not implemented to work with the
+\SPE{}'s, because they suffer from the Transfer / Workload problem
+mentioned in section \ref{sec:transferworkload} on page
+\pageref{sec:transferworkload}, but also because the are called with
+extremely small vectors, i. e. a row or a column of a sub matrix. The
+time joining the results from each \SPE\ takes too much time, compared
+to the time calculating the actual result.
+
+Though the SPU shader, \function{xGER}, has been implemented it
+suffers from the same problem as above. Using multiple \SPE{}'s takes
+longer time than one. Later benchmarking reveals, that our
+implementation of \function{xGER} actually performs quite well on
+larger problem sizes.
+
+%The SPU shader for \function{xTRSM}, used to update $L$, is also
+%called with only one \SPE{}, because of interdependent columns.
+
+\subsubsection{Solving The Equation}
+
+When the matrix is LU factorized, the actual equations can be
+solved. First the same row interchanges from the LU factorization is
+performed on the right hand side matrix, $B$,
+with \function{xLASWP}. Then the lower and upper triangular matrices
+are solved with two calls to the \BLAS\ routine
+\function{xSTRSM} respectively.
+
+%Since the implementation for the upper triangular matrix solution is
+%rather non-trivial, compared to the standard \BLAS\ implementation, we
+%will give a brief walk through of the developed algorithm. It is more
+%complex than the implementation of the lower matrix solution, because
+%it have additional row dependencies when parallelizing it on the
+%\SPE{}'s.
+
+Our implementation is based on Netlibs reference
+code\cite{netlib_blas} and the conversion of the routines are
+non-trivial.
+
+The Netlib code is written in Fortran, with a column major,
+sequential, unblocked approach, whereas our implementation is an \FHB\
+based row major, distributed, vectorized, blocked approach.
+
+
+%In section \refthis{sec:solve_code}, the solve test program can be
+%reviewed. 
+
+%Both the original and the slightly adjusted NumPyCBE version.
+
+\subsection{Integration With Python/NumPy}
+
+By default NumPy uses the \LAPACK\ function \function{xGESV} for
+solving a set of linear equations. This function, and its dependent
+\LAPACK\ and \BLAS\ routines, only utilizes the \PPE{}. It could
+therefore be interesting to let the \LAPACK\ routines use the IBM
+tuned \BLAS\ library, but in the current version of NumPy, this is not
+possible. NumPy requires \ATLAS\ to compile, therefore, running NumPy
+on the \CBE\ could not utilize IBM's \BLAS\ library.
+
+If wanting to implement the developed solver into NumPy, it can simply
+be done from the \file{linalg.py} file, where the function wrapper solve is
+implemented.
+
+%\subsection{Cell Blade Center and Cell Clusters}
+%
+%EN LILLE NOTE OMKRING DETTE....
+
+
+\section{Successive Over Relaxation}
+
+\SOR\ is an iterative algorithm for solving the same problem as the previous, that is,
+
+\[
+Ax = B
+\]
+
+It is done by extrapolating the Gauss-Seidel
+method\cite{mathworld-sor}, which is another method of solving
+equations iteratively. The program can be seen at:
+
+http://lurbano-5.memphis.edu/GeoMod/index.php/Matrix\_solvers.
+
+A key difference is, that $B$ is only a single set of right hand
+sides, whereas \function{xGESV} could handle multiple sets of right
+hand sides.
+
+The idea of implementing another algorithm for solving systems of
+linear equations is, that it utilizes core functionality of NumPy to a
+much higher degree. Where \function{solve} is a single NumPy
+operation, \SOR\ is series of NumPy operations. Since there is a lot
+of NumPy core functionality involved, \SOR\ should give us an
+impression of how efficient NumPyCBE really is. 
+
+Contrary to Monte Carlo, \SOR\ primarily operates on sub vectors of a
+matrix. This could pose as a problem, because even with a large
+matrix, only a small subset is operated on at a time.
+This means that each \SPE{} might only have a small amount of data to work with.
+Since operations are element wise, this means that two important factors
+is not optimal for \SPE{} utilization:
+
+\begin{itemize}
+\item{Data transfers might be done on smaller amounts of data
+(giving more congestion on the bus)}, and
+\item{the problem is memory bound.}
+\end{itemize}
+
+\subsection{Theory}
+
+The extrapolation of Gauss-Seidel takes form of a weighted average,
+between the previous iteration and the computed Gauss-Seidel
+iteration, successively for each equation\cite{mathworld-sor},
+
+\[
+x_{i}^k = \omega \overline{x}_i^k + (1-\omega)x_i^{k-1}
+\]
+
+\noindent where $\overline{x}$ denotes the Gauss-Seidel iteration and $\omega$ is the extrapolation factor. It can be expressed in terms of matrices,
+
+\[
+x^k = (D-\omega L)^{-1}[\omega U  + (1-\omega)D]x^{k-1}+\omega(D-\omega L)^{-1} b
+\]
+
+\noindent where $x$ is a vector of unknowns and $b$ is the vector of right hand sides. A is decomposed to $L$, $U$ and $D$. Such that,
+
+
+
+\[
+\mathbf{L} = \left[
+\begin{array}{ccccc}
+0       & 0     & \cdots &   \cdots  & 0 \\
+a_{21}  & 0      &        &          &\vdots \\
+a_{31}  & a_{32} & \ddots &          &  \vdots \\
+\vdots & \vdots & \ddots &  0       & 0 \\
+a_{m1}  & a_{m2} & \cdots  & a_{mn-1} &  0 \\
+\end{array}
+\right]
+\quad
+\mathbf{U} = \left[
+\begin{array}{ccccc}
+0       & a_{12} & a_{13} &  \cdots  & a_{1n} \\
+0       & 0      & a_{23}  & \cdots  & a_{2n} \\
+\vdots  &        & \ddots &  \ddots &  \vdots \\
+\vdots  &        &        &  0      & a_{m-1n} \\
+0       & \cdots & \cdots  & 0      &  0 \\
+\end{array}
+\right]
+\]
+
+and
+
+\[
+\mathbf{D} = \left[
+\begin{array}{ccccc}
+a_{11}       & 0      & 0       &  \cdots & 0 \\
+0       & a_{22}      & 0  & \cdots  & 0 \\
+\vdots  &        & \ddots &  \ddots &  \vdots \\
+\vdots  &        &        &  a_{m-1n-1}      & 0 \\
+0       & \cdots & \cdots  & 0      &  a_{mn} \\
+\end{array}
+\right]
+\]
+
+where $L$ is a strictly lower triangular matrix, $U$ is a strictly
+upper triangular matrix and $D$ is diagonal matrix. Moreover,
+
+\[
+A = L+ U +D
+\]
+
+$\omega$ must be adjusted to give the best convergence and
+\cite{mathworld-sor} briefly mentions a heuristic estimate, based on mesh spacing and discretization of the underlying physical domain. But, since this thesis is not about fast convergence, it is only essential, that both NumPy and NumPyCBE uses the same $\omega$ value.
+
+\subsection{Implementation}
+
+All functionality for running the SOR algorithm is implemented in NumPyCBE.
+The shaders used are basicly the same as the ones used for the Monte Carlo application.
+
+We had to modify the algorithm slightly. Because infinity is
+represented as zero on the \SPE{}'s, we had to explicitly set the
+variable \variable{DMax} to 1 for the first iteration.
+
+The slicing of the input matrix in the inner loop of the SOR algorithm
+is handled by storing meta data about the slice on the ndarray. The
+multiplication shader that takes the slice as input then checks this
+meta data and only fetches the actual row needed from the input matrix.
+In this way only relevant data are transferred to the \SPE{}'s. This
+is in accordance with the slicing operation described in
+section \ref{subsec:slicing}.
+
+%\subsection{Cell Blade Center and Cell Clusters}

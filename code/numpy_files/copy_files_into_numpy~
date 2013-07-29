@@ -1,0 +1,12 @@
+cp arraymethods.c ../python/numpy-1.2.1/numpy/core/src/.
+cp ccompiler.py ../python/numpy-1.2.1/numpy/distutils/.
+#cp scalartypes.inc.src ../python/numpy-1.2.1/numpy/core/src/.
+#cp arraytypes.inc.src ../python/numpy-1.2.1/numpy/core/src/.
+#cp multiarraymodule.c ../python/numpy-1.2.1/numpy/core/src/.
+#cp ufuncobject.c ../python/numpy-1.2.1/numpy/core/src/.
+cp arrayobject.c ../python/numpy-1.2.1/numpy/core/src/.
+cp ndarrayobject.h /home/jens/python/numpy-1.2.1/numpy/core/include/numpy/.
+cp numpy.pxi /home/jens/python/numpy-1.2.1/numpy/random/mtrand/.
+#cp cblas.h /home/jens/python/numpy-1.2.1/numpy/core/blasdot/.
+#cp _dotblas.c /home/jens/python/numpy-1.2.1/numpy/core/blasdot/.
+#cp linalg.py /home/jens/python/numpy-1.2.1/numpy/linalg/.

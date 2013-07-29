@@ -1,0 +1,140 @@
+#This script is run from within the "numpy-1.2.1" library
+#It can be called through sftp using the following command:
+#"sftp -b transfer_numpy_to_ppu jens@distlab5.ekstranet.diku.dk"
+
+mkdir numpy-1.2.1
+mkdir numpy-1.2.1/numpy
+mkdir numpy-1.2.1/numpy/core
+mkdir numpy-1.2.1/numpy/distutils
+mkdir numpy-1.2.1/numpy/doc
+mkdir numpy-1.2.1/numpy/f2py
+mkdir numpy-1.2.1/numpy/fft
+mkdir numpy-1.2.1/numpy/lib
+mkdir numpy-1.2.1/numpy/linalg
+mkdir numpy-1.2.1/numpy/ma
+mkdir numpy-1.2.1/numpy/numarray
+mkdir numpy-1.2.1/numpy/oldnumeric
+mkdir numpy-1.2.1/numpy/random
+mkdir numpy-1.2.1/numpy/testing
+mkdir numpy-1.2.1/numpy/tests
+
+mkdir numpy-1.2.1/numpy/core/blasdot
+mkdir numpy-1.2.1/numpy/core/code_generators
+mkdir numpy-1.2.1/numpy/core/include
+mkdir numpy-1.2.1/numpy/core/src
+mkdir numpy-1.2.1/numpy/core/tests
+mkdir numpy-1.2.1/numpy/core/include/numpy
+mkdir numpy-1.2.1/numpy/core/include/numpy/fenv
+mkdir numpy-1.2.1/numpy/core/tests/data
+
+mkdir numpy-1.2.1/numpy/f2py/docs
+mkdir numpy-1.2.1/numpy/f2py/src
+mkdir numpy-1.2.1/numpy/f2py/docs/usersguide
+
+mkdir numpy-1.2.1/numpy/lib/benchmarks
+mkdir numpy-1.2.1/numpy/lib/src
+mkdir numpy-1.2.1/numpy/lib/tests
+
+put ./numpy/f2py/* numpy-1.2.1/numpy/f2py/
+put ./numpy/f2py/docs/* numpy-1.2.1/numpy/f2py/docs/
+put ./numpy/f2py/src/* numpy-1.2.1/numpy/f2py/src/
+put ./numpy/f2py/docs/usersguide/* numpy-1.2.1/numpy/f2py/docs/usersguide/
+
+put ./numpy/lib/* numpy-1.2.1/numpy/lib
+put ./numpy/lib/benchmarks/* numpy-1.2.1/numpy/lib/benchmarks
+put ./numpy/lib/tests/* numpy-1.2.1/numpy/lib/tests/
+put ./numpy/lib/src/* numpy-1.2.1/numpy/lib/src/
+
+put * numpy-1.2.1/
+put ./numpy/* numpy-1.2.1/numpy/
+put ./numpy/core/* numpy-1.2.1/numpy/core/
+put ./numpy/core/include/* numpy-1.2.1/numpy/core/include/
+put ./numpy/core/include/numpy/* numpy-1.2.1/numpy/core/include/numpy/
+put ./numpy/core/include/numpy/fenv/* numpy-1.2.1/numpy/core/include/numpy/fenv/
+put ./numpy/core/blasdot/* numpy-1.2.1/numpy/core/blasdot/
+put ./numpy/core/code_generators/* numpy-1.2.1/numpy/core/code_generators/
+put ./numpy/core/tests/* numpy-1.2.1/numpy/core/tests/
+put ./numpy/core/tests/data/* numpy-1.2.1/numpy/core/tests/data/
+put ./numpy/core/src/* numpy-1.2.1/numpy/core/src/
+
+#Well, that was core, f2py and lib. Now on with the rest...
+mkdir numpy-1.2.1/numpy/fft/tests
+put ./numpy/fft/* numpy-1.2.1/numpy/fft/
+put ./numpy/fft/tests/* numpy-1.2.1/numpy/fft/tests/
+
+mkdir numpy-1.2.1/numpy/testing/tests
+put ./numpy/testing/* numpy-1.2.1/numpy/testing/
+put ./numpy/testing/tests/* numpy-1.2.1/numpy/testing/tests/
+
+mkdir numpy-1.2.1/numpy/numarray/numpy
+put ./numpy/numarray/* numpy-1.2.1/numpy/numarray/
+put ./numpy/numarray/numpy/* numpy-1.2.1/numpy/numarray/numpy/
+
+put ./numpy/tests/* numpy-1.2.1/numpy/tests/
+
+mkdir numpy-1.2.1/numpy/oldnumeric/tests
+put ./numpy/oldnumeric/* numpy-1.2.1/numpy/oldnumeric/
+put ./numpy/oldnumeric/tests/* numpy-1.2.1/numpy/oldnumeric/tests/
+
+mkdir numpy-1.2.1/numpy/distutils/fcompiler
+mkdir numpy-1.2.1/numpy/distutils/command
+mkdir numpy-1.2.1/numpy/distutils/tests
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_ext
+mkdir numpy-1.2.1/numpy/distutils/tests/gen_ext
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext
+mkdir numpy-1.2.1/numpy/distutils/tests/pyrex_ext
+mkdir numpy-1.2.1/numpy/distutils/tests/swig_ext
+
+put ./numpy/distutils/* numpy-1.2.1/numpy/distutils/
+put ./numpy/distutils/fcompiler/* numpy-1.2.1/numpy/distutils/fcompiler
+put ./numpy/distutils/command/* numpy-1.2.1/numpy/distutils/command
+put ./numpy/distutils/tests/* numpy-1.2.1/numpy/distutils/tests
+put ./numpy/distutils/tests/f2py_ext/* numpy-1.2.1/numpy/distutils/tests/f2py_ext
+put ./numpy/distutils/tests/gen_ext/* numpy-1.2.1/numpy/distutils/tests/gen_ext
+put ./numpy/distutils/tests/f2py_f90_ext/* numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext
+put ./numpy/distutils/tests/pyrex_ext/* numpy-1.2.1/numpy/distutils/tests/pyrex_ext
+put ./numpy/distutils/tests/swig_ext/* numpy-1.2.1/numpy/distutils/tests/swig_ext
+
+
+
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_ext/src
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_ext/tests
+mkdir numpy-1.2.1/numpy/distutils/tests/gen_ext/tests
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/include
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/src
+mkdir numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/tests
+mkdir numpy-1.2.1/numpy/distutils/tests/pyrex_ext/tests
+mkdir numpy-1.2.1/numpy/distutils/tests/swig_ext/src
+mkdir numpy-1.2.1/numpy/distutils/tests/swig_ext/tests
+
+put ./numpy/distutils/tests/f2py_ext/src/* numpy-1.2.1/numpy/distutils/tests/f2py_ext/src
+put ./numpy/distutils/tests/f2py_ext/tests/* numpy-1.2.1/numpy/distutils/tests/f2py_ext/tests
+put ./numpy/distutils/tests/gen_ext/tests/* numpy-1.2.1/numpy/distutils/tests/gen_ext/tests
+put ./numpy/distutils/tests/f2py_f90_ext/include/* numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/include
+put ./numpy/distutils/tests/f2py_f90_ext/src/* numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/src
+put ./numpy/distutils/tests/f2py_f90_ext/tests/* numpy-1.2.1/numpy/distutils/tests/f2py_f90_ext/tests
+put ./numpy/distutils/tests/pyrex_ext/tests/* numpy-1.2.1/numpy/distutils/tests/pyrex_ext/tests
+put ./numpy/distutils/tests/swig_ext/src/* numpy-1.2.1/numpy/distutils/tests/swig_ext/src
+put ./numpy/distutils/tests/swig_ext/tests/* numpy-1.2.1/numpy/distutils/tests/swig_ext/tests
+
+
+
+
+
+
+
+mkdir numpy-1.2.1/numpy/random/mtrand
+mkdir numpy-1.2.1/numpy/random/tests
+put ./numpy/random/* numpy-1.2.1/numpy/random/
+put ./numpy/random/mtrand/* numpy-1.2.1/numpy/random/mtrand
+put ./numpy/random/tests/* numpy-1.2.1/numpy/random/tests
+
+put ./numpy/doc/* numpy-1.2.1/numpy/doc
+
+mkdir numpy-1.2.1/numpy/linalg/tests
+put ./numpy/linalg/* numpy-1.2.1/numpy/linalg/
+put ./numpy/linalg/tests/* numpy-1.2.1/numpy/linalg/tests
+
+mkdir numpy-1.2.1/numpy/ma/tests
+put ./numpy/ma/* numpy-1.2.1/numpy/ma/
+put ./numpy/ma/tests/* numpy-1.2.1/numpy/ma/tests

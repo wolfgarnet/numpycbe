@@ -1,0 +1,164 @@
+In this master thesis, we will explore the capabilities of
+the \CBE{}, a heterogeneous single chip multi processor. Especially
+how capable it is, when doing scientific computing using Python.\\
+
+Python is a high level programming language well suited for scientific
+applications. It is commonly used for scientific computing, because it
+features a rich library of functions and applications suited for this
+and because it is a very intuitive and easy language to
+learn. Furthermore, it is written in C and can easily be extended with
+user designed modules. Python features easy usage and incorporation of
+Fortran applications as well, which is historical noted for being the
+foremost language used for scientific computing.
+
+The scientific module for Python, SciPy, introduces a large collection
+of scientific tools with applications in a wide range of relevant
+areas - statistical analysis, engineering, linear arithmetics etc.
+SciPy depends on another module NumPy, which introduces a fast and
+convenient multidimensional array.
+
+The NumPy multidimensional array, ndarray (also referred to as the
+NumPy array), features a vast library of methods for various
+computations and reshaping. These methods include basic linear
+algebraic functions, basic statistics, and advanced array
+manipulations. It relies on external libraries and NumPy core
+functionalities.
+
+Unfortunately it is currently impossible to utilize the powers of
+SciPy and NumPy on the \CBE{}, because Python is not build to utilize
+the specific architecture of the \CBE{}. \\
+
+This master thesis will implement a version of NumPy, that will
+utilize the \CBE{}.
+
+We will study the possibilities of how to organize data on the \CBE\
+to efficiently run scientific calculations, transfer the data back and
+forth between the elements in the \CBE{} and incorporate it in NumPy
+as its multidimensional array. for this purpose a data structure will
+be developed, that will suit all demands and requirements as best as
+possible.
+
+Furthermore, a fully functional framework for running NumPy code
+fragments efficiently on the \SPEv{'s} will be developed through
+analysis of different possibilities.
+
+This will lead to a conceptual version of NumPy that will utilize the
+powers and potential of the \CBE{}. Furthermore, a series of programs
+will be implemented to show the efficiency of the chosen data
+structure and the implementation. These programs will serve as proof
+of the concept for utilizing the \CBE\ through Python.\\
+
+To test the data structure efficiently, some computational demanding
+programs will be implemented. Such as solving a set of linear
+equations and Monte Carlo $\pi$.
+
+A non \CBE\ optimized version of NumPy will serve as basis of
+comparison. It will of course only be using the Power PC part of
+the \CBE{}. To keep the perspective as real as possible,
+the \CBE\ enhanced NumPy version will also be compared to a version
+running on an Intel quad core and dual core, see
+table \ref{tbl:setup}. The three versions will be compared as ``out of
+the box'' installations. This means, that a standard installation of
+NumPy will be used.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|c|c|}
+\hline
+                & Quad Core & Dual Core \\
+\hline
+Clock Speed     & 2.4GHz    & 1.66GHz   \\
+Cache           & 8MB L2    & 2 MB L2   \\
+FSB             & 1066MHz   & 667MHz    \\
+Memory          & 2GB       & 4GB       \\
+Mem Clock speed & 800MHz    & 533MHz    \\
+\hline
+\end{tabular}
+\caption{Specifications of the two PC's used for comparisons.\label{tbl:setup}}
+\end{center}
+\end{table}
+
+Our implementation will primarily be targeted at a single PlayStation
+3, since it was what we had at our disposal. The key difference
+between a PlayStation 3 and a common Cell processor, is the lack of
+two compute intensive processors. So, instead of having eight processors, only
+six are available(not counting the main Power PC processor).
+
+%Of course we will analyze and discuss the circumstances where a
+%``real'' Cell processor would run our implementation. Furthermore, we
+%will discuss the situation with a Blade Center\footnote{A dual Cell
+%processor, consisting of 16 compute intensive processor and two
+%Power PCs.}.\\
+
+Since NumPy is very large and consists of many methods and functions,
+it is beyond the scope of this thesis to implement them all. The
+thesis will instead involve specific areas of NumPy that has great
+relevance with regard to scientific computing.
+
+
+\section{Motivation}
+
+Given an efficient \CBE\ version of NumPy, SciPy should in overall be
+able to perform good. This could lead to a migration from the
+commercial mathematical application Matlab, to an open source \CBE\
+enhanced version of SciPy/NumPy. With SciPys large scientific library
+and NumPy's multidimensional arrays, the combination is close to match
+Matlab, user interface wise and syntactical.
+
+Furthermore, general application programmers using NumPy, will, free
+of charge, be able to harness the powers of the \CBE{}.\\
+
+As a basis of this masters thesis, we will build on some of the
+conclusions given by Rasmus T{\o}nnesens masters
+thesis\cite{scipy}. In his thesis he concludes, that when implementing
+scientific programs, using Python, on the \CBE{}, it is an advantage
+to use a more sophisticated data structure for data.
+
+He uses \FHB\ as his general data layout, because it utilizes the
+hierarchic memory layout on the \CBE{} very efficiently, he receives
+great performance. It will therefore serve as a starting point in our
+thesis. The data structure will be analyzed and implemented into
+NumPy. We will see how well it cooperates with all the other elements
+in NumPy and how it performs.
+
+
+\section{Thesis Outline}
+
+In this master thesis we will have the most analytical chapters
+first. This will be \REFCHAP{chapter:cell}, where the \CBE\
+architecture is analyzed and examined, \REFCHAP{chapter:python}, where
+the Python structures and NumPy structures are analyzed and discussed,
+and
+\REFCHAP{chapter:analysis}, where the underlying data structure for our implementation is analyzed, with relation to the previous chapter. 
+
+In \REFCHAP{chapter:dispatcher} we will discuss the findings from the
+first chapters and form a way and method of programming
+the \SPUv{'s}. \REFCHAPP{chapter:numpy} introduces the insides of
+NumPy, how to incorporate new functionality, by examples and
+experiences.
+
+In \REFCHAP{chapter:implementation}, we
+discuss how the actual system is implemented on the \CBE{}.
+
+This all adds up to \REFCHAP{chapter:testprograms}, where the final
+implementation of NumPy on the \CBE{}, will be tested, given three
+distinct test programs. These three tests will be benchmarked
+in \REFCHAP{chapter:performance}.
+
+%\REFCHAPP{chapter:tools} will briefly demonstrate the developed tools for easing the project process.
+
+Finally, \REFCHAP{chapter:conclusion}, will conclude this master
+thesis, sum up the derived conclusions achieved during the overall
+process and testing.
+
+This master thesis is primarily directed for people interested in
+Python, Cell BE and scientific computing. It is assumed, that the
+reader is familiar with the programming languages Python and C, and
+has a basic understanding of computer science.
+
+Our implementation can be found on the web site
+numpycbe.ejbyurterne.dk or the web site numpycbe.gymnerds.dk.
+
+
+
+% , henceforth called NumPyCBE

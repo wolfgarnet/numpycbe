@@ -1,0 +1,507 @@
+%\section{Testing}
+%
+%\subsection{Validating Correctness}
+%
+%\subsection{Limitations}
+%
+%\subsection{Conclusion of Testing}
+%
+%\section{Performance and Benchmarking}
+
+In this chapter, the three test programs from
+chapter \refthis{chapter:testprograms} will be tested and
+benchmarked. We will perform tests on various problem sizes, argument
+for the implementations correctness and compare NumPyCBE against NumPy
+on three different architectures:
+
+\begin{itemize}
+\item{The \PPE{}}
+\item{The dual core}
+\item{The quad core}
+\end{itemize}
+
+The installation of NumPy on these three architectures will be done as
+``out-of-the-box'' installations. Furthermore, the NumPyCBE \BLAS\
+implementations will be compared to:
+
+\begin{itemize}
+\item{IBM \BLAS{}}
+\item{ATLAS on the \PPE{}}
+\item{ATLAS on the dual core}
+\item{ATLAS on the quad core}
+\end{itemize}
+
+For each of the test programs, we will micro benchmark the individual
+relevant functions, comparing them to their equivalent NumPy or \BLAS\
+routine.
+
+Even though our implementation supports all possible block sizes(must
+be divisible by four), we have chosen to use a block size of 64,
+that is $64 \times 64$ elements in a block. The graph in
+figure \ref{fig:blocksizes} shows array multiplication run with
+different block sizes. As it can be seen $64 \times 64$ is the optimal
+setting.
+
+Another reason why this particular block size is good, is because it
+then supports larger memory sizes for object meta data. A $94 \times
+94$ block, uses almost 35KB and having to support three blocks with
+double buffering requires more than 200KB for single precision
+numbers. This leaves almost nothing to shaders and dispatcher.
+
+\figscale{graphs/graphdata/blocksize.pdf}{Array multiplication run with different block sizes}{fig:blocksizes}{1}
+
+\section{Monte Carlo}
+
+As it can be seen in the graph in figure \ref{fig:mc}, the total time
+for running the test in NumPyCBE outperformed the standard NumPy
+implementation on all architectures. The closest architecture was the
+quad core, which was almost six times as slow with the largest problem
+size($4096 \times 4096$). NumPyCBE compared to NumPy on the \PPE{},
+gives a speed up of almost 24 times. This comparison is with $3072
+\times 3072$, because NumPy had to swap to the disk with larger
+problem sizes. This effect can be seen in the graph with the problem
+size of $4096 \times 4096$ for the \PPE{}, where the running time was
+almost nine seconds.
+
+\figscale{graphs/graphdata/mc.pdf}{Benchmark of Monte Carlo $\pi$}{fig:mc}{1.15}
+
+The following graph, in figure \ref{fig:mc_speedup}, shows the speed
+up of all the implemented shaders, relative to the number of used
+\SPE{'s}. As it can be seen, the less work per element to be done, the less speed
+up is achieved. Both array multiplication and array addition are
+computed fast and must therefore wait for the \EIB{}. This specific
+problem was described in section \ref{sec:transferworkload} on page
+\pageref{sec:transferworkload}. Running these two shaders, without the
+overhead of Python, reveals that they utilize the bandwidth to its
+maximum of 25.6GB/s. In section \ref{sec:cellperformance} on page
+\pageref{sec:cellperformance}, the theoretical peak performance of the
+main memory is discussed and thus no more than 25.6GB/s can be
+transferred from or to the main memory. Consequently, their actual
+speed up is thus closer to three.
+
+The array summation can achieve a speed up of almost four, from one to
+six \SPE{}'s, because only one array is used and only a scalar value
+is returned from each \SPE{}, which does not incur the same amount of
+traffic as for multiply and add.
+
+Both filling an array with random values and doing array comparisons
+can achieve linear speed ups, because they take longer time to compute
+per element. 
+
+%So, while not waiting for data to be transfered, the
+%shaders was expected to achieve better speed ups.
+
+\figscale{graphs/graphdata/mc_speedup.pdf}{Speed Up Graph of Monte Carlo $\pi$}{fig:mc_speedup}{1.15}
+
+The following four
+graphs, \ref{fig:random}, \ref{fig:mult}, \ref{fig:le}
+and \ref{fig:sum}, shows the performance of NumPyCBE implementations
+of filling an array with random values, array multiplication,
+computing less or equal and array addition compared to the NumPy
+implementations on the other testing architectures. It can be seen,
+that the quad core performs quite well. This is because the quad core
+has large level one and level two caches.
+
+Array addition is left out, because it performs close to array
+multiplication. Both requires two arrays as operands and one array as
+result, and both requires one assembler instruction for calculations.
+
+The most interesting benchmark is the array summation. As it can be
+difficult to see the exact times, table \ref{tbl:sum} shows them,
+including their individual calculated speed ups. What is particularly
+interesting is that NumPyCBE achieves a speed up of over 200, compared
+to NumPy running on the \PPE{}. 
+
+First of all, calculating the data vectorized achieves a four times
+speed up. Doing this on six \SPE{}'s, give additional six times speed
+up. Which totals in 24 times. Assuming the actual clock frequency on
+the \PPE{}, is half the \SPE{}'s, \REFSECNOTITLE{sec:ppe}, the total
+speed up is doubled, giving a total theoretical speed up of 48. Though
+this does not entirely account for 200. If NumPy does the slightest
+extra work per element, the performance will drop. That be boundary
+checks and such. NumPyCBE does only check for boundaries once and thus
+only transfers data besides summing the elements.
+
+Another contributor to its performance, comparing it to the other
+operations, is the fact, that it is a unary function. That is, only
+one array is to be transferred per element. Additionally, it only
+returns one scalar value per \SPE\ used. This gives a less
+occupied \EIB\ and thus less congestion. Even with the overhead of
+calling Python, a bandwidth utilization of almost 20GB/s is achieved.
+
+\begin{table}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+Size & NumPyCBE & PPE & Speed Up & Quad Core & Speed Up & Duo Core  & Speed Up \\
+\hline
+$1024^2$ & 0.992         & 52.578         & \bf{53}       & 13.814         & \bf{13.925}   & 28.293               & \bf{28.52}  \\
+$2048^2$ & 1.085         & 208.311        & \bf{191.992}  & 55.203	   & \bf{50.878}   & 101.96               & \bf{93.972}  \\
+$3072^2$ & 2.102         & 468.113        & \bf{222.699}  & 124.173        & \bf{59.074}   & 237.04               & \bf{112.769} \\
+$4096^2$ & 3.527         & 832.314        & \bf{235.983}  & 218.875        & \bf{62.056}   & 408.149              & \bf{115.721} \\
+\hline
+\end{tabular}
+\caption[Speed up table for array summation]{Speed up table for array summation. Comparing NumPy on different architectures. Times given in milliseconds.\label{tbl:sum}}
+\end{table}
+
+\figscale{graphs/graphdata/arrayrandom.pdf}{Benchmark of Array Random Filling}{fig:random}{1.15}
+
+\figscale{graphs/graphdata/arraymultiply.pdf}{Benchmark of Array Multiplication}{fig:mult}{1.15}
+
+\figscale{graphs/graphdata/arrayle.pdf}{Benchmark of Array Less Equal}{fig:le}{1.15}
+
+\figscale{graphs/graphdata/arraysum.pdf}{Benchmark of Array Summation}{fig:sum}{1.15}
+
+
+\subsection{Correctness}
+
+Since the program should approximate $\pi$, it is easy to validate its
+correctness. Given $\pi \approx 3.14159265$, the result from the Monte
+Carlo simulation should resemble that. And, because it does that, the
+correctness is validated.
+
+\subsection{Discussion}
+
+Given the results of the implementation of Monte Carlo $\pi$, it can
+be said, that the \CBE\ performs very well. Using NumPyCBE for general
+element wise arithmetics makes good sense and can outperform other
+contemporary architectures.
+
+The traditional architectures operate scalar by scalar, where NumPyCBE
+operates on vectors, thus doing four operations at a time, see section
+\ref{sec:simdization} on page \pageref{sec:simdization} for
+clarification. Furthermore, it utilizes all six \SPE{}'s to distribute the
+workload to. NumPy only utilizes one core on the other architectures.
+
+If NumPy did utilize multiple cores, it probably wouldn't achieve any
+significant speed up, because the operations used in Monte Carlo are
+memory-bandwidth bound, see section \REFSEC{sec:transferworkload}, and
+the \EIB\ is much more wide than the other architectures busses.
+
+
+\section{Solving Systems of Linear Equations}
+
+We will divide the performance results into two parts. One for the
+complete routine and one for micro benchmarks.
+
+The micro benchmarks will show the performance of the shaders
+separately. Thus giving a possibility to see how well they do compared
+to the other libraries, \ATLAS\ and IBM \BLAS\ for \CBE{}.
+
+
+
+\subsection{Solve}
+
+In figure \ref{fig:solve} the graphs shows the total running times for
+solve with various problem size. It can be seen that NumPyCBE
+outperforms all the other architectures with around a factor five to
+its nearest competitors. Again, NumPy needs to swap to the disk when
+working with large matrices. This could, among other things, be
+because NumPy transposes its data prior to solving the equations.
+
+As stated in \REFCHAPNOTITLE{chapter:testprograms}
+only \function{SGEMM}, \function{STRSM} and \function{SGER} was
+implemented utilizing \SPE{}'s. It was also determined, that the level
+1 BLAS routines would not achieve any speed up running in parallel
+rather than sequential. In the micro benchmark section, these level 2
+and 3 BLAS routines will be tested separately and
+figure \ref{fig:solve-speedup} shows their speed up graphs. As
+expected, the \function{SGEMM} and \function{STRSM} achieves linear
+speed ups, whereas \function{SGER} nearly achieves a 4.5 speed up.
+
+\figscale{graphs/graphdata/solve.pdf}{Running times for solve}{fig:solve}{1.15}
+
+\figscale{graphs/graphdata/solve_speedup.pdf}{Speedups per SPE for solve}{fig:solve-speedup}{1.15}
+
+\newpage
+\subsection{Micro Benchmarks}
+\label{lbl:micro_benchmarks}
+
+Since the shaders developed for this test is based of the \LAPACK\ and
+\BLAS\ routines, they can be compared directly. In the following micro
+benchmarks five different libraries have been used:
+
+\begin{enumerate}
+\item{NumPyCBE(shaders)}
+\item{IBM \BLAS\ for \CBE{}}
+\item{\ATLAS\ for the \PPE{}}
+\item{\ATLAS\ for the dual core}
+\item{\ATLAS\ for the quad core}
+\end{enumerate}
+
+Two level 3 BLAS routines were developed in this project for
+calculating and solving an LU factorization, using the FHB data layout
+and the \SPE{}'s. The implementation uses double-buffering and
+vectorized operations. Speedups of roughly 50\% were observed using
+loop unrolling. Furthermore, a single level 2 BLAS routine, using FHB
+and \SPE{}'s was developed.
+
+Auxiliary level 1 BLAS routines were also implemented using FHB,
+though not utilizing the \SPE{}'s.
+
+The first micro benchmark done is \function{SGEMM},
+then \function{STRSM} and lastly \function{SGER}. \function{STRSM} is
+called twice when solving the system of linear equations, as mentioned
+before. Since the number of operations and the running time is equally
+the same, only the solving of the lower triangular matrix is
+benchmarked.
+
+
+%Stating that the number of operations performed by
+%each of the implementations are equal, further analysis of the
+%NumPyCBE implementation is done.
+
+%Running the function in the CELL simulator reveals a lot of branch misses. Actually, 
+
+
+
+\subsubsection{SGEMM}
+
+
+The implementation is compared to the \function{SGEMM} routine for the
+four other instances mentioned in section \ref{lbl:micro_benchmarks}
+on page \pageref{lbl:micro_benchmarks}.
+
+The SPE utilization of the shader can be seen on
+graph \ref{fig:solve-speedup}. As seen here, the speedup is linear in
+the number of SPE's used. This is to be expected, since there is a
+large number of operations performed for each block transfer.
+
+The running times observed with our NumPyCBE shader and the external
+BLAS libraries are seen in graph
+\ref{fig:sgemm}. The most interesting observation is the fact that NumPyCBE is clearly faster than
+the \ATLAS\ versions running on the PPE, dual core and quad
+core, respectively, for all data sizes. This is the most important
+result, because the idea is that NumPyCBE should compete with
+standard out-of-the-box NumPy installations running on typical
+hardware.
+
+The comparisons with IBM BLAS are also interesting. For problem sizes
+of $1024 \times 1024$ and $2048 \times 2048$, IBM BLAS is faster by a
+factor of approx. 1.8 and 3.8, respectively. But when reaching a
+problem size of $3072 \times 3072$, IBM BLAS is slower by a factor of
+two. When increasing the problem size to $4096 \times 4096$
+IBM \BLAS\ is slower by a factor of at least 8.
+
+It's to be expected, that IBM BLAS is faster, since this is a library
+developed by IBM to run on the \CBE{}, taking advantage of the
+SPE's. It's assumed that it will take more time to implement a version
+of a the level 3 BLAS multiplication algorithm, that could beat IBM
+BLAS, than was available in the time span of this thesis. Even though
+FHB is an effective layout for matrix multiplication, it seems likely
+that IBM BLAS would use DMA lists to a high level of efficiency when
+fetching data in a non-FHB layout. It is therefore a surprising fact,
+that IBM BLAS \function{SGEMM} routine is seen to be slow for large
+problem sizes!
+
+The reason for the higher running times are memory swapping to
+disk. When running with a problem size of $1024 \times 1024$, no
+swapping takes place and approx. 54MB out of 182MB available RAM is
+used. When running on a problem size of 4094x4096 swapping takes place
+and approx. 129MB of data is swapped at the peak of swap-space
+usage. At this peak, 171 MB of RAM were being used solely by
+the \function{SGEMM} routine. Our BLAS 3 implementation does not swap
+at these problem sizes, and as result it is much faster than IBM
+BLAS. This swapping is a big problem, since users running scientific
+applications often calculate their problem sizes based on the amount
+of memory available, and assume that the standard libraries they use
+will perform in-place operations as much as possible. In fact
+six \SPE{}'s running IBM \function{SGEMM} are as slow as the dual core
+running \ATLAS{}.
+
+Another interesting things is, that the \PPE\ is much faster than the
+quad core, but because the \CBE\ has such a fast \EIB{}, the data is
+processed very fast and thus performs better than the quad core. It is
+also possible, that the \ATLAS\ library on the \PPE\ uses vectorized
+instructions.
+
+It was tested to see if running times for IBM BLAS would be better, if
+the data was placed in an F-style\footnote{Column major} layout. This
+was not the case. The time for IBM BLAS running with a problem size of
+$4096 \times 4096$ is 103 seconds - notice that the graph only shows
+times up to and including 60 seconds. Also, the times that are
+included in the graphs for IBM BLAS are actually the best ones
+observed. The running times for large problem sizes varied quite a
+bit, and for a problem size of $4096 \times 4096$ the worst time
+observed for IBM BLAS was approx. 3,5 minutes for SGEMM.
+
+%///////////////////////////////////////////////////
+%Maybe use some of this?  Sakset fra conclusion
+%///////////////////////////////////////////////////
+%With regards to the results in [Toennesens], the problem instance used on his test were of a size,
+%where IBM \BLAS\ would not be needing to swap memory to disk, if the test performed was only a single call to eg. \function{sgemm}.
+%However, the performance meassurements of sgemm in [Toennesens], was taken out of a larger context. This larger
+%context involved an LU factorization. Therefore it is not possible to compare the performance measseaurements gained in
+%his sgemm test and the sgemm test done in this project directly. We cannot be sure that memory was not swapped in [Toennesnes] test.
+%In his report, [Toennenses] is puzzled over the fact IBM \BLAS\ performs so poorly and speculates that this might be
+%due to the fact the IBM \BLAS\ needs som time initially to set up the SPE's. We have not seen anything that suggests that
+%the initial setup time for IBM \BLAS\ should be of a magnitude that could explain the poor performance shown in [Toennensens] project.
+%In fact, we have observed this initial setup time to be around 20ms and that it is not dependent on the size of the problem instance.
+
+\subsubsection{Notes on SGEMM}
+
+This thesis is based on work done by Rasmus T{\o}nnesens in his master
+thesis on SciPy\cite{scipy}. In this master thesis, running times are
+observed that shows that IBM BLAS is 32 times slower for
+multiplication than the implementation of multiplication used in an LU
+factorization benchmark. We can not recognize these numbers when we
+observe running times of IBM BLAS.
+
+With regards to the results in \cite{scipy}, the problem instance used
+in his test were of a size, where IBM \BLAS\ would not be needing to
+swap memory to disk, if the test performed was only a single call to
+eg. \function{SGEMM}. However, the performance measurements
+of \function{SGEMM}, was taken out of a larger context. This larger
+context involved an LU factorization. Therefore it is not possible to
+compare the performance measurements gained in his \function{SGEMM}
+test and the \function{SGEMM} test done in this thesis directly. We
+cannot be sure that memory was not swapped in his test. In his
+report, he is puzzled over the fact IBM \BLAS\ performs so poorly and
+speculates that this might be due to the fact that IBM \BLAS\
+initially needs to setup the SPE's. We have not seen anything that
+suggests that the initial setup time for IBM \BLAS\ should be of a
+magnitude that could explain the poor performance shown in his
+thesis. In fact, we have observed this initial setup time to be
+around 20ms and that it is not dependent on the size of the problem
+instance.
+
+
+
+%With the problem size used in T{\o}nnenese's
+%thesis, IBM BLAS should not be swapping memory to disk if used to
+%multiply two square matrices as in the above tests. Since the test
+%T{\o}nnesen performs involves an entire LU factorization and solving,
+%we cannot conclude that no memory was swapped to disk in the test, but
+%a factor of 32 times faster than IBM BLAS seems optimistic
+%nonetheless. We observe a factor of approx. 8 times faster in the best
+%case (with respect to IBM BLAS) when running with a problem size of
+%$4096 \times 4096$ blocks of sizes $4096 \times 4096$ floats with
+%SGEMM.  Based on these results we cannot conclude that BLAS 3
+%multiplication done using a FHB layout can outperform IBM BLAS with a
+%factor of 32 as stated in T{\o}nnensen's thesis. In his thesis,
+%T{\o}nnesen also seems puzzled over the times observed for IBM BLAS,
+%however his guess that this might be caused by overhead setting up
+%code etc.  on the SPE's seems unlikely. It seems reasonably that the
+%time used by IBM BLAS for initializing the SPE's should not be
+%dependent on the problem size, but instead on a constant
+%factor. During the course of this project, we have observed this setup
+%time to be around 20ms.
+
+
+\figscale{graphs/graphdata/sgemm.pdf}{Benchmark of SGEMM}{fig:sgemm}{1.15}
+
+
+\subsubsection{STRSM}
+
+In figure \ref{fig:strsmllnu}, it can be seen that the IBM
+implementation performs quite well compared to the NumPyCBE
+implementation. The main reason for this, revealed by using the IBM
+Cell Simulator, is because of lots of branch misses. The output of the
+simulator can be seen in appendix \ref{app:strsm}. Another reason
+could be to dependency stalls in the main loop. This was located by
+the SPU timing tool provided by IBM. The output can be seen in
+appendix \ref{app:strsmtime}.
+
+Again, as with \function{SGEMM}, IBM BLAS swaps a lot when the problem
+size is too large, causing its running time to rise
+dramatically. \function{SGEMM} and \function{STRSM} both have $O(n^3)$
+operations and therefore roughly have to use the same amount of data,
+the same conclusions can be applied to each other.
+
+
+\figscale{graphs/graphdata/strsm_llnu.pdf}{Benchmark of STRSM}{fig:strsmllnu}{1.15}
+
+\subsubsection{SGER}
+
+In figure \ref{fig:sger}, the implementations of the level 2 BLAS
+routine \function{SGER} is compared. As it can be seen, NumPyCBE is
+actually faster than IBM BLAS, and outperforms the \ATLAS\
+implementation on all the other architectures by more than 15 times.
+
+\figscale{graphs/graphdata/sger.pdf}{Benchmark of SGER}{fig:sger}{1.15}
+
+\subsection{Correctness}
+
+For validating the correctness of \function{solve}, it is quite simple
+to compare the results from NumPy. The correctness can also be
+validated by going over the numbers, ensuring the unknowns add up to the
+right hand side.
+
+
+Furthermore, every sub routine used, like \function{SGEMM}
+and \function{STRSM}, has been tested thoroughly
+against \ATLAS{}. \function{solve} works, though we had some
+experiences with rounding errors with very high precision numbers,
+like numbers with up to 25 decimals. We experienced some differences
+of roughly $10^{-6}$ from NumPyCBE and \ATLAS{}. See
+section \refthis{sec:spufloat} for clarification.
+
+\subsection{Discussion}
+
+As tested by T{\o}nnesen, IBM BLAS did have some difficulties, but
+only with large problem sizes, which he did not test with. By
+reviewing his implementation of ``\function{SGEMM}'', it could be seen
+that it was not a full implementation. It would only work for blocked
+LU factorization. The IBM implementation works in the general case and
+maybe this could cause some of the performance differences.\\
+
+It could have been interesting to test a row major implementation of
+the BLAS routines with the same \CBE\ tuning as ours. This could have
+given a fair comparison between ordinary contiguous data layout
+and \FHB{}. Because data is ready to be transferred in \FHB{}, our bet
+would have been, that \FHB\ would have been faster.
+
+This test could have been done, by implementing the exact same
+operations and \CBE\ tune ops as we did, for a row major version and
+compare the running times.
+
+
+
+\section{Successive Over Relaxation}
+
+%Since it is quite difficult to identify large coefficient matrices,
+%that converges towards a correct result within a reasonable time
+%frame, 
+
+We have benchmarked \SOR\ by letting it run within a certain
+number of iterations. Executing the same number of iterations, we
+measured the benchmark in seconds per iteration. The results of the
+benchmarks can be seen in the graph in figure \ref{fig:sor}. As it can
+be seen, NumPyCBE performs quite well, even though only a small amount
+of \SPE{}'s are used.
+
+\figscale{graphs/graphdata/sor.pdf}{Successive Over Relaxation, running times per iteration}{fig:sor}{1}
+
+It can also be seen, that the \PPE\ outperforms the dual and quad
+core, contrary to Monte Carlo, where the \PPE\ was the slowest. It
+could be, that because \SOR\ operates on rows of the matrix,
+sequentially, an entire row can be in the cache at one time. Thus not
+needing to exchange data as often, as in Monte Carlo.
+
+Speed up graphs for the individual shaders are not provided, because
+it does not make sense. Even though the total problem size is large,
+the individual iterations in the main loop of \SOR{}, operates on
+single rows. These single rows does not constitute a big enough
+problem for multiple \SPE{}'s to gain any significant speed up.
+
+The key problem is, that slicing one row from a $4096 \times 4096$
+matrix, will only form one block containing 4096 elements(with a block
+size $64 \times 64$). They way the subsequent shaders, in the program,
+is implemented, this only constitutes work for one \SPE{}. To remedy
+this, the shaders could be reworked to extract data at block row
+level. e.g. four \SPE{}'s, will calculate 16 rows from a block.
+
+\subsection{Correctness}
+
+As with \function{solve}, in the previous test program, the
+correctness can be validated by comparing results from the original
+test program running on NumPy.
+
+\subsection{Discussion}
+
+As it was foreseen, \SOR\ did no achieve the same improvement over the
+other architectures, as observed with the two first test
+programs. Though it actually did outperform them all, with a factor of
+2.5 to the \PPE{}, 4 to quad core and 6 to the dual core.
+
+A key observation is, that even for extremely small problem sizes,
+the \CBE\ can achieve good results.

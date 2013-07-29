@@ -1,0 +1,24 @@
+set terminal postscript eps color
+set key inside left top vertical Right box
+set output "mc_speedup.eps"
+
+set bar 1.0
+set boxwidth 1.9 absolute
+set style fill   solid 1.00 border -1
+set style rectangle back fc lt -3 fillstyle  solid 1.00 border -1
+
+set title "Monte Carlo PI Speed Up Graph"
+set xlabel "Number of SPEs"
+set ylabel "Speed up"
+
+set size 1, 0.7
+
+#set yrange [ 0.00000 : 10. ] noreverse nowriteback
+
+ran(x ) = 137.853/x
+mult(x) = 21.542/x
+add(x)  = 21.649/x
+le(x)   = 104.292/x
+sum(x)  = 10.802/x
+
+plot "mc_times.dat" using (ran($2)):xtic(1) with lines title "Random", '' u (mult($3)):xtic(1) with lines title "Multiplication", '' u (add($4)):xtic(1) with lines title "Addition", '' u (le($5)):xtic(1) with lines title "Less equal", '' u (sum($6)):xtic(1) with lines title "Summation"

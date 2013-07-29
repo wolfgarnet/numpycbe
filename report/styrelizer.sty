@@ -1,0 +1,880 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Packages
+
+%%% Tests for latex or pdflatex
+
+%\newif\ifpdf
+%\ifx\pdfoutput\undefined
+%    \pdffalse
+%\else
+%    \pdfoutput=1
+%    \pdftrue
+%\fi
+
+% Det aktuelle afsnits titel skrives øverst til venstre på hver side
+%\pagestyle{headings}
+
+
+
+% ISO Latin-1 encoding (Western Europe)
+\usepackage[latin1]{inputenc}
+
+% Danish hyphenation pattern
+%\usepackage[danish]{babel}
+
+% EC fonts correspond to the NFSS encoding scheme T1
+\usepackage[T1]{fontenc}
+
+%\fontfamily{Augie}
+
+% Gives acces to TC 'text companion' fonts
+\usepackage{textcomp}
+
+% include pre-formatted text
+\usepackage{verbatim}
+
+% use graphics
+%\usepackage[dvips]{graphicx}
+%\usepackage[dvips]{color}
+
+\usepackage[pdftex]{graphicx}
+\usepackage[pdftex]{color}
+
+%\ifpdf		
+%    \usepackage[pdftex]{graphicx}
+%	\usepackage[pdftex]{color}
+%\else
+%    \usepackage{graphicx}
+%	\usepackage{color}
+%\fi
+
+% extended fontsset!!!
+\usepackage{amsfonts}
+
+% misc. latexsymbols
+\usepackage{latexsym}
+
+% mathfont
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+% A4 margin
+\usepackage{a4wide}
+
+% For code
+\usepackage{listings}
+
+% To wrap text around a figure
+\usepackage{wrapfig}
+\usepackage{subfig}
+
+% Fancy header
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+%\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+%\renewcommand{\sectionmark}[1]{\markright{#1}{}}
+%\renewcommand{\subsectionmark}[1]{\markright{#1}{}}
+%\renewcommand{\subsectionmark}[1]{\markright{#1-1-1-}{}}
+
+% Not quite sure
+%\usepackage{floatflt,epsfig}
+
+% Make floating bodies
+\usepackage{float}
+
+% Captionstuff
+\usepackage{caption}
+
+% Boxed minipage
+\usepackage{boxedminipage}
+
+% IF THEN ELSE
+\usepackage{ifthen}
+
+% Hyper refs
+\usepackage[pdftex, bookmarks]{hyperref}
+
+%%%%%% CONTENTS, of DOOOOOOOM!!!
+
+%\floatstyle{boxed}
+\newfloat{figure}{thp}{lof}
+\floatname{figure}{Figure}
+
+%\floatstyle{boxed}
+\newfloat{example}{thp}{loe}
+\floatname{example}{Example}
+
+%\floatstyle{boxed}
+%\newfloat{elisting}{thp}{loc}
+%\floatname{elisting}{Example listing}
+
+\newfloat{elisting}{thp}{loc}
+\floatname{elisting}{Code Listing}
+
+%\floatstyle{boxed}
+\newfloat{table}{thp}{lot}
+\floatname{table}{Table}
+
+
+%%% FONT
+
+\fontencoding{T1}
+\fontfamily{BrushScriptX-Italic}
+\fontseries{m}
+\fontshape{it}
+\fontsize{12}{15}
+\selectfont
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Sizes
+
+\newcommand{\mypagewidth}{15cm}
+\newcommand{\myhalfpagewidth}{7.2cm}
+
+\setlength\textwidth{\mypagewidth}
+
+% this is to make all minipage environments the same size
+\newcommand{\minipageSize}{\mypagewidth}%
+\newcommand{\minipageSizeh}{\myhalfpagewidth}%
+\newcommand{\minipagemargin}{11cm}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Appearance
+
+\definecolor{codebg}{rgb}{0, 1, 1}
+\definecolor{frame}{rgb}{0, 0, 0}
+\definecolor{examplebg}{rgb}{0.2, 0.3, 1}
+\definecolor{commentcolor}{rgb}{0, 0.4, 0}
+\definecolor{dred}{rgb}{0.9,0,0}
+\definecolor{keywordcolor}{rgb}{0, 0, 0.7}
+\definecolor{writer}{rgb}{0, 0, 0}
+
+% Setting the margins
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{0cm}
+
+% Hyperrefs
+\hypersetup{colorlinks=true, anchorcolor=blue, pdftitle={NumPy on Cell BE}, pdfauthor={Jens Ipsen & Christian Wolfgang}, pdfsubject={Cell Broadband Engine and Python}, linkcolor=black, menucolor=blue}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Title stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\mytitle}[0]{NumPy on the Cell Broadband Engine}
+\title{\mytitle}
+\author{Christian Wolfgang, 261278 \& Jens Ipsen, 150377}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Headers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\fancyhf{}
+
+
+%\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+
+%\fancyhead[L]{\thepage}
+%\fancyhead[L]{[\thesubsection] Implementation and Optimization of Software on a CELL BE}
+%\fancyhead[C]{\mytitle}
+\fancyhead[L]{\rightmark}
+%\fancyhead{\leftmark}
+\fancyfoot[C]{\thepage}
+%\fancyfoot[LE,RO]{\slshape \rightmark}
+\renewcommand{\headrulewidth}{0.1pt}
+\renewcommand{\footrulewidth}{0pt}
+%\addtolength{\headheight}{0.5pt} % make space for the rule
+
+
+\newcommand{\newsection}[1]{
+  \refstepcounter{section}%
+%  \section*{\thesection \center{#1}}%
+%  \section*{\center{#1} \flushleft \rule[0pt]{100pt}{0.1pt}\\ \thesection}%
+  \addcontentsline{toc}{section}{#1}
+  \section*{\center{#1} \\ \flushleft \thesection}%
+%  \section*{\thesection \flushright #1}%
+}
+
+\newcommand{\newchapter}[1]{
+  \refstepcounter{section}%
+%  \section*{\thesection \center{#1}}%
+%  \section*{\center{#1} \flushleft \rule[0pt]{100pt}{0.1pt}\\ \thesection}%
+  \addcontentsline{toc}{section}{#1}
+  \section*{\center{#1} \\ \flushleft \thesection}%
+%  \section*{\thesection \flushright #1}%
+}
+
+
+%%% Depth of table of contents
+\setcounter{tocdepth}{1}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Environments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Setting the code environment
+\lstset{%
+  language=c++,%
+  classoffset=0,%
+%  basicstyle=\scriptsize\color{writer},%
+  basicstyle=\color{writer},%
+%  basicstyle=\tiny\color{writer},%
+  keywordstyle=\color{keywordcolor}\bfseries,%
+  commentstyle=\footnotesize\tt\color{commentcolor},%
+  captionpos=b,%
+  framerule=0.1px,%
+  framexrightmargin=2cm,%
+  tabsize=2,%
+  breaklines=true,%
+  breakatwhitespace=false,%
+  showstringspaces=false,%
+  classoffset=1,%
+  keywordstyle=\color{dred},%
+  morekeywords={spu_or, spu_slqwbyte, spu_rlmaskqwbyte},%
+  keywordstyle=\color{keywordcolor}\bfseries,%
+  morekeywords={real,Functions_t, Operation_t, LS_ShaderInfo, PyArrayObject},%
+%  classoffset=2,%
+%  keywordstyle=\color{green},%
+%  morekeywords={buffer, shift1, shift2},%
+  classoffset=0%
+  %labelstyle=\tiny\color{darkred},%
+  %labelstep=1%
+}
+
+%%%%%%%%%%%%%%%%%%
+% Code example environment (not working....)
+% 1 :{caption}
+% 2 :{label}
+%\newcommand{\minipageSize}{12cm}%
+%\newcommand{\minipagemargin}{11cm}%
+
+
+%%Frames
+
+
+\newcounter{exampler}[section]
+\setcounter{exampler}{0}
+\def\theexampler{\thesection.\arabic{exampler}}
+
+\def\thefigure{\thechapter.\arabic{figure}}
+\def\thetable{\thechapter.\arabic{table}}
+\def\theelisting{\thechapter.\arabic{elisting}}
+
+
+
+
+\newcommand{\mpage}[2]{%
+  \begin{minipage}[htbp]{#1cm}#2%
+  \end{minipage}%
+}%
+
+
+%%% Doesn't work properly
+\newenvironment{exampleenvtre}[2]%
+{%
+  \vspace{0.5cm}
+  \def\saveCaption{#1}%
+  \def\saveLabel{#2}%
+  \refstepcounter{exampler}%
+  %\begin{minipage}[htbp]{\minipageSize}%
+  \verbatim%
+}%
+{%
+  \endverbatim%
+	\begin{center}%
+  \begin{flushleft}{\footnotesize \textbf{Example \theexampler: }{\saveCaption} }\end{flushleft}%
+  \label{\saveLabel}%
+	\end{center}%
+	%\end{minipage}%
+	\vspace{0.5cm}%
+}%
+
+%%% Frame start and end
+\newcommand{\marginSize}{0.2cm}
+
+\newcommand{\frameStart}{%
+  \begin{tabular}{|l|}%
+  \hline%
+  \begin{minipage}[htbp]{\minipageSize}%
+  \vspace{\marginSize}%
+}%
+
+\newcommand{\frameEnd}{%
+	\vspace{\marginSize}%
+  \end{minipage}\\%
+  \hline%
+  \end{tabular}\\%
+}%
+
+%%% Sized
+
+\newcommand{\frameStartsized}[1]{%
+  \begin{tabular}{|l|}%
+  \hline%
+  \begin{minipage}[htbp]{#1}%
+  \vspace{\marginSize}%
+}%
+
+\newcommand{\frameEndsized}{%
+	\vspace{\marginSize}%
+  \end{minipage}\\%
+  \hline%
+  \end{tabular}\\%
+}%
+
+%%% Caption
+\newcommand{\mycaption}[3]{%
+	\vspace{0.1cm}%
+  \begin{minipage}[htbp]{\minipageSize}%
+  \begin{center}%
+  \begin{flushleft}{\hspace{2mm}\footnotesize \textbf{#1 #2: }{#3} }\end{flushleft}%
+  %\begin{tabular}{l}{\footnotesize \textbf{#1 #2: }{#3} }\end{tabular}%
+  \end{center}%
+  \end{minipage}%
+}%
+
+
+%%%% CODE BEGIN //         \lstset{basicstyle=\scriptsize}%
+
+\newcommand{\examplecode}[3]{%
+  \examplecodex{#1}{#2}{#3}{1}%
+}%
+\newcommand{\examplecodesmall}[3]{%
+  \examplecodex{#1}{#2}{#3}{0}%
+}%
+
+\newcommand{\examplecodex}[4]{%
+  \def\saveCaption{#2}%
+  \def\saveLabel{#3}%
+  \vspace{0.5cm}
+    \begin{elisting}%
+      \begin{center}%
+      \begin{boxedminipage}[t]{\minipageSize}%
+        \ifthenelse{\equal{#4}{0}}{\lstset{basicstyle=\tiny}}{\lstset{basicstyle=\scriptsize}}%
+        \lstinputlisting{#1}%
+        \caption{\saveCaption\label{\saveLabel}}%
+      \end{boxedminipage}%
+      \end{center}%  
+    \end{elisting}%
+}%
+
+%\newcommand{\examplecodex}[3]{%
+%  \def\saveCaption{#2}%
+%  \def\saveLabel{#3}%
+%  \vspace{0.5cm}
+%    \begin{elisting}%
+%      \begin{center}%
+%      \begin{boxedminipage}[t]{\minipageSize}%
+%        \lstinputlisting{#1}%
+%        \caption{\saveCaption\label{\saveLabel}}%
+%      \end{boxedminipage}%
+%      \end{center}%  
+%    \end{elisting}%
+%}%
+
+%%%% CODE END
+
+\newcommand{\examplecodesized}[4]{%
+  \def\saveCaption{#2}%
+  \def\saveLabel{#3}%
+  \vspace{0.5cm}
+  \begin{center}%
+    \begin{elisting}%
+      \lstinputlisting{#1}%
+%    \mycaption{Example}{\theexampler}{\saveCaption}
+    \end{elisting}%
+  \end{center}%
+%  \label{\saveLabel}%
+}%
+
+%%%% Example Listings, lst and verb
+
+% Dual lst example
+\newcommand{\examplelistingDual}[3]{%
+  \begin{minipage}[b]{\minipageSizeh}%
+    \begin{boxedminipage}[b]{\minipageSizeh}%
+      \lstinputlisting{#1}%
+    \end{boxedminipage}%
+    \captionof{elisting}{#2}%
+    \label{#3}%
+  \end{minipage}%
+}%
+
+% Dual verb example
+\newcommand{\examplelistingverbDual}[3]{%
+  \begin{minipage}[b]{\minipageSizeh}%
+    \begin{boxedminipage}[b]{\minipageSizeh}%
+      \verbatiminput{#1}%
+    \end{boxedminipage}%
+    \captionof{elisting}{#2}%
+    \label{#3}%
+  \end{minipage}%
+}%
+
+% Lst example
+\newcommand{\examplelisting}[3]{%
+  \begin{elisting}%
+    \begin{center}%
+      \begin{minipage}[b]{\minipageSize}%
+        \begin{boxedminipage}[b]{\minipageSize}%
+          \lstinputlisting{#1}%
+        \end{boxedminipage}%
+        \captionof{elisting}{#2}%
+        \label{#3}%
+      \end{minipage}%
+    \end{center}%
+  \end{elisting}%
+}%
+
+% Verb example
+\newcommand{\examplelistingverb}[3]{%
+  \begin{elisting}%
+    \begin{center}%
+      \begin{minipage}[b]{\minipageSize}%
+        \begin{boxedminipage}[b]{\minipageSize}%
+          \verbatiminput{#1}%
+        \end{boxedminipage}%
+        \captionof{elisting}{#2}%
+        \label{#3}%
+      \end{minipage}%
+    \end{center}%
+  \end{elisting}%
+}%
+
+%\newcommand{\example2}[]{%
+%  \begin{boxedminipage}[b]{7cm}
+%    \lstinputlisting{Code/ifthenelse.c}
+%    \captionof{ecode}{Using if then else.}
+%    \label{ex:ifthenelse}
+%  \end{boxedminipage}
+%}%
+
+
+%\newcommand{\exampleverb}[3]{%
+%  \def\saveCaption{#2}%
+%  \def\saveLabel{#3}%
+%  \vspace{0.5cm}
+%%  \refstepcounter{figure}%
+%  \begin{center}%
+%    \begin{figure}%
+%        \scriptsize %
+%	\frameStart{}%
+%  \verbatiminput{#1}%
+%  \frameEnd{}%  
+%  \normalsize%
+%  \caption{\saveCaption\label{\saveLabel}}
+%    \end{figure}%
+%  \end{center}%
+%  \label{\saveLabel}%
+%  \vspace{0.5cm}
+%}%
+
+%\newcommand{\exampleverbsized}[4]{%
+%  \def\saveCaption{#2}%
+%  \def\saveLabel{#3}%
+%  \vspace{0.5cm}
+%  \refstepcounter{exampler}%
+%  \begin{center}%
+%	\frameStartsized{#4}%
+%  \verbatiminput{#1}%
+%  \frameEndsized{}%  
+%	\mycaption{Example}{\theexampler}{\saveCaption}
+%  \end{center}%
+%  \label{\saveLabel}%
+%  \vspace{0.5cm}
+%}%
+
+
+
+%%% Works
+%\newcommand{\examplethis}[3]{%
+%  \def\saveCaption{#2}%
+%  \def\saveLabel{#3}%
+%  \vspace{0.5cm}
+%  \refstepcounter{exampler}%
+%  \begin{center}%
+%	\frameStart{}%
+%  \verbatiminput{#1}%
+%  \frameEnd{}%  
+%	\mycaption{Example}{\theexampler}{\saveCaption}
+%  \end{center}%
+%  \label{\saveLabel}%
+%  \vspace{0.5cm}
+%}%
+
+%\newenvironment{exampleenv}[2]%
+%{%
+%  \vspace{0.5cm}
+%  \def\saveCaption{#1}%
+%  \def\saveLabel{#2}%
+%  \refstepcounter{exampler}%
+%  \begin{minipage}[htbp]{\minipageSize}%
+%	\begin{center}%
+%	\frameStart{}%
+%}%
+%{%
+%	\frameEnd{}%
+%	\mycaption{Example}{\theexampler}{\saveCaption}%
+%	\end{center}%
+%	\label{\saveLabel}%
+%	\end{minipage}\\%
+%	\vspace{0.5cm}%
+%}%
+
+
+%\newenvironment{figureenv}[2]%
+%{%
+%  \vspace{0.5cm}
+%  \def\saveCaption{#1}%
+%  \def\saveLabel{#2}%
+%  \refstepcounter{figure}%
+%  \begin{minipage}[htbp]{\minipageSize}%
+%	\begin{center}%
+%	\frameStart{}%
+%}%
+%{%
+%	\frameEnd{}%
+%	\mycaption{Figure}{\thefigure}{\saveCaption}
+%	\end{center}%
+%	\label{\saveLabel}%
+%	\end{minipage}\\%
+%	\vspace{0.5cm}%
+%}%
+
+% Custom scaled figure
+%\newcommand{\myfigure}[2]{%
+%\includegraphics[scale=#2]{#1}%}%
+%}%
+
+%% Custom scaled figure
+%\newcommand{\figscale}[4]{%
+%  \noindent\begin{figure}[h!]%
+%  \refstepcounter{figure}%
+%  \begin{center}%
+%    \frameStart{}%
+%    \begin{center}%
+%      \includegraphics[scale=#4]{#1}%}%
+%    \end{center}%
+%    \frameEnd{}%
+%    \mycaption{Figure}{\thefigure}{#2}
+%  \end{center}%
+%  \label{#3}%
+%  \end{figure}%
+%}%
+
+%%%%%%%%%%%%%%%%%%%%%
+% Figure includes
+%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\figscalerotate}[5]{%
+  \begin{figure}[!hbp]%
+    \begin{center}%
+      \begin{boxedminipage}[!hbp]{\minipageSize}%
+        \begin{center}%
+        \includegraphics[scale=#4, angle=#5]{#1}%
+        \caption{#2}%
+        \label{#3}%
+        \end{center}%
+      \end{boxedminipage}%
+    \end{center}%
+  \end{figure}%
+}%
+
+\newcommand{\figscale}[4]{\figscalerotate{#1}{#2}{#3}{#4}{0}}
+
+% Include a 
+\newcommand{\fig}[3]{%
+  \begin{figure}[h]%
+    \begin{center}%
+      \begin{boxedminipage}[t]{\minipageSize}%
+        \begin{center}%
+          \includegraphics[width=\minipageSize]{#1}%
+          \caption{#2}%
+          \label{#3}%
+        \end{center}%
+      \end{boxedminipage}%
+    \end{center}%
+  \end{figure}%
+}%
+
+%%% Include a max width graph
+\newcommand{\figgraph}[3]{%
+\begin{center}%
+\noindent\begin{figure}[h]%
+\begin{center}%
+\fbox{%
+\includegraphics[width=\minipageSize, height=5cm]{#1}}%
+\end{center}%
+\caption{#2}%
+\label{#3}%
+\end{figure}%
+\end{center}%
+}%
+
+% Custom scaled figure
+\newcommand{\figscaleto}[4]{%
+\begin{center}%
+\noindent\begin{figure}[h!]%
+\begin{center}%
+\fbox{%
+\includegraphics[scale=#4]{#1}}%
+\end{center}%
+\caption{#2}%
+\label{#3}%
+\end{figure}%
+\end{center}%
+}%
+
+% Custom width
+\newcommand{\figwidth}[4]{%
+\begin{center}%
+\noindent\begin{figure}[h]%
+\begin{center}%
+\fbox{%
+\includegraphics[width=#4]{#1}}%
+\end{center}%
+\caption{#2}%
+\label{#3}%
+\end{figure}%
+\end{center}%
+}%
+
+
+% How to include figures(wrapped)
+% 1: file 2: Caption 3: Label 4: scale 5: position 6: width (maybe 5: #lines 6: \begin{wrapfigure}[#5]{#6}{#7})
+\newcommand{\figwrap}[6]{%
+\begin{wrapfigure}{#5}{#6}%
+\fbox{\includegraphics[scale=#4]{#1}}%}
+\caption{#2}%
+\label{#3}%
+\end{wrapfigure} %
+}%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% REFERENCES
+\newcommand{\refthis}[1]{\ref{#1}, \textit{>>\nameref{#1}<<}, on page \pageref{#1}}
+\newcommand{\refthisnosection}[1]{\textit{>>\nameref{#1}<<} on page \pageref{#1}}
+\newcommand{\refthisnotitle}[1]{\ref{#1} on page \pageref{#1}}
+%\newcommand{\REFCHAP}[1]{chapter \ref{#1}, \textit{>>\nameref{#1}<<} on page \pageref{#1}}
+\newcommand{\REFCHAP}[1]{chapter \refthis{#1}}
+\newcommand{\REFCHAPP}[1]{Chapter \refthis{#1}}
+%\newcommand{\REFCHAPP}[1]{Chapter \ref{#1}, \textit{>>\nameref{#1}<<} on page \pageref{#1}}
+\newcommand{\REFCHAPNOTITLE}[1]{chapter \ref{#1} on page \pageref{#1}}
+\newcommand{\REFSEC}[1]{section \ref{#1}, \textit{>>\nameref{#1}<<} on page \pageref{#1}}
+\newcommand{\REFSECNOTITLE}[1]{section \ref{#1} on page \pageref{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Acronyms
+
+%Keyword
+% 1: the keyword
+\newcommand{\keyword}[1]{#1}
+
+
+% 1: {\Latex name}
+% 2: {Long NAME}
+% 3: {Short hand name}
+\newcommand{\defTerm}[3]{\textit{#2}\ (\keyword{#3})\renewcommand{#1}{\keyword{#3}}}
+%\newcommand{\defTerm2}[4]{\textit{#2}\ (\keyword{#3})\renewcommand{#1}{\keyword{#3}}}
+
+\newcommand{\ABI}{\defTerm{\ABI}{Application Binary Interface}{ABI}}
+\newcommand{\AOS}{\defTerm{\AOS}{Array of Structures}{AOS}}
+\newcommand{\ATLAS}{\defTerm{\ATLAS}{Automatically Tuned Linear Algebra Software}{ATLAS}}
+\newcommand{\BLAS}{\defTerm{\BLAS}{Basic Linear Algebra Subprograms}{BLAS}}
+\newcommand{\BEI}{\defTerm{\BEI}{Cell Broadband Engine Interface}{BEI}}
+\newcommand{\BIC}{\defTerm{\BIC}{Bus Interface Controller}{BIC}}
+\newcommand{\BIF}{\defTerm{\BIF}{Cell Broadband Engine Interface}{BIF}}
+\newcommand{\CBE}{\defTerm{\CBE}{Cell Broadband Engine}{Cell BE}}
+\newcommand{\CBEv}[1]{\defTerm{\CBE}{Cell Broadband Engine#1}{Cell BE}}
+\newcommand{\CDT}{\defTerm{\CDT}{C/C++ Development Tool}{CDT}}
+\newcommand{\CESOF}{\defTerm{\CESOF}{CBE Embedded SPE Object Format}{CESOF}}
+\newcommand{\DMA}{\defTerm{\DMA}{Direct Memory Access}{DMA}}
+\newcommand{\EA}{\defTerm{\EA}{Effective Address}{EA}}
+\newcommand{\EAR}{\defTerm{\EAR}{Effective Address Reference}{EAR}}
+\newcommand{\ELF}{\defTerm{\ELF}{Executable and Linkable Format}{ELF}}
+\newcommand{\EIB}{\defTerm{\EIB}{Element Interconnect Bus}{EIB}}
+\newcommand{\FHB}{\defTerm{\FHB}{Full Hybrid Block}{FHB}}
+\newcommand{\FHBv}[1]{\defTerm{\FHB}{Full Hybrid Block#1}{FHB}}
+\newcommand{\IIC}{\defTerm{\IIC}{Internal Interrupt Controller}{IIC}}
+\newcommand{\IOC}{\defTerm{\IOC}{I/O Controller}{IOC}}
+\newcommand{\LAPACK}{\defTerm{\LAPACK}{Linear Algebra Package}{LAPACK}}
+\newcommand{\LS}{\defTerm{\LS}{Local Storage}{LS}}
+\newcommand{\MFC}{\defTerm{\MFC}{Memory Flow Controller}{MFC}}
+\newcommand{\MIC}{\defTerm{\MIC}{Memory Interface Controller}{MIC}}
+\newcommand{\MMIO}{\defTerm{\MMIO}{Memory Mapped I/O}{MMIO}}
+\newcommand{\MMU}{\defTerm{\MMU}{Memory Management Unit}{MMU}}
+\newcommand{\PIC}{\defTerm{\PIC}{Position Independent Code}{PIC}}
+\newcommand{\PPE}{\defTerm{\PPE}{Power Processor Element}{PPE}}
+\newcommand{\PPU}{\defTerm{\PPU}{Power Processing Unit}{PPU}}
+\newcommand{\PS}{\defTerm{\PS}{PlayStation 3}{PS3}}
+\newcommand{\PSv}[1]{\defTerm{\PS}{PlayStation 3#1}{PS3}}
+\newcommand{\RAM}{\defTerm{\RAM}{Resource Allocation Management}{RAM}}
+\newcommand{\SIMD}{\defTerm{\SIMD}{Single Instruction Multiple Data}{SIMD}}
+\newcommand{\SOA}{\defTerm{\SOA}{Structure of Arrays}{SOA}}
+\newcommand{\SOR}{\defTerm{\SOR}{Successive Over Relaxation}{SOR}}
+\newcommand{\SPE}{\defTerm{\SPE}{Synergistic Processor Element}{SPE}}
+\newcommand{\SPEv}[1]{\defTerm{\SPE}{Synergistic Processor Element#1}{SPE}}
+\newcommand{\SPU}{\defTerm{\SPU}{Synergistic Processing Unit}{SPU}}
+\newcommand{\SPUv}[1]{\defTerm{\SPU}{Synergistic Processing Unit#1}{SPU}}
+
+
+\newcommand{\ResetAcronym}{%
+  \renewcommand{\ABI}{\defTerm{\ABI}{Application Binary Interface}{ABI}}
+  \renewcommand{\AOS}{\defTerm{\AOS}{Array of Structures}{AOS}}
+  \renewcommand{\ATLAS}{\defTerm{\ATLAS}{Automatically Tuned Linear Algebra Software}{ATLAS}}
+  \renewcommand{\BLAS}{\defTerm{\BLAS}{Basic Linear Algebra Subprograms}{BLAS}}
+  \renewcommand{\BIF}{\defTerm{\BIF}{Cell Broadband Engine Interface}{BIF}}
+  \renewcommand{\BEI}{\defTerm{\BEI}{Cell Broadband Engine Interface}{BEI}}
+  \renewcommand{\BIC}{\defTerm{\BIC}{Bus Interface Controller}{BIC}}
+  \renewcommand{\CBE}{\defTerm{\CBE}{Cell Broadband Engine}{Cell BE}} 
+  \renewcommand{\CDT}{\defTerm{\CDT}{C/C++ Development Tool}{CDT}}
+  \renewcommand{\CESOF}{\defTerm{\CESOF}{CBE Embedded SPE Object Format}{CESOF}}
+  \renewcommand{\DMA}{\defTerm{\DMA}{Direct Memory Access}{DMA}}
+  \renewcommand{\EA}{\defTerm{\EA}{Effective Address}{EA}}
+  \renewcommand{\EAR}{\defTerm{\EAR}{Effective Address Reference}{EAR}}
+  \renewcommand{\ELF}{\defTerm{\ELF}{Executable and Linkable Format}{ELF}}
+  \renewcommand{\EIB}{\defTerm{\EIB}{Element Interconnect Bus}{EIB}}
+  \renewcommand{\FHB}{\defTerm{\FHB}{Full Hybrid Block}{FHB}}
+  \renewcommand{\IIC}{\defTerm{\IIC}{Internal Interrupt Controller}{IIC}}
+  \renewcommand{\IOC}{\defTerm{\IOC}{I/O Controller}{IOC}}
+  \renewcommand{\LAPACK}{\defTerm{\LAPACK}{Linear Algebra Package}{LAPACK}}
+  \renewcommand{\LS}{\defTerm{\LS}{Local Storage}{LS}}
+  \renewcommand{\MFC}{\defTerm{\MFC}{Memory Flow Controller}{MFC}}
+  \renewcommand{\MIC}{\defTerm{\MIC}{Memory Interface Controller}{MIC}}
+  \renewcommand{\MMIO}{\defTerm{\MMIO}{Memory Mapped I/O}{MMIO}}
+  \renewcommand{\MMU}{\defTerm{\MMU}{Memory Management Unit}{MMU}}
+  \renewcommand{\PIC}{\defTerm{\PIC}{Position Independent Code}{PIC}}
+  \renewcommand{\PPE}{\defTerm{\PPE}{Power Processor Element}{PPE}}
+  \renewcommand{\PPU}{\defTerm{\PPU}{Power Processing Unit}{PPU}}
+  \renewcommand{\PS}{\defTerm{\PS}{PlayStation 3}{PS3}}
+  \renewcommand{\RAM}{\defTerm{\RAM}{Resource Allocation Management}{RAM}}
+  \renewcommand{\SIMD}{\defTerm{\SIMD}{Single Instruction Multiple Data}{SIMD}}
+  \renewcommand{\SOA}{\defTerm{\SOA}{Structure of Arrays}{SOA}}
+  \renewcommand{\SOR}{\defTerm{\SOR}{Successive Over Relaxation}{SOR}}
+  \renewcommand{\SPE}{\defTerm{\SPE}{Synergistic Processor Element}{SPE}}
+  \renewcommand{\SPU}{\defTerm{\SPU}{Synergistic Processing Unit}{SPU}}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Extras
+
+\newcounter{sss}[subsubsection]
+\setcounter{sss}{0}
+\def\thesss{\thesubsubsection\alph{sss}}
+\newcommand{\subsubsubsection}[1]{%
+  %\stepcounter{sss}{1}%
+  %\addtocounter{sss}{1}
+  \refstepcounter{sss}
+  %\protected@edef\thesss{\thesection}%
+  \vspace{0.5cm}%
+  \noindent%
+  \textbf{\thesss \hspace{0.25cm} #1}%
+  %\newline%
+  \par\noindent%
+}%
+
+
+\newcommand{\incsmallverb}[1]{%
+	\footnotesize
+	\verbatiminput{#1}
+	\normalsize
+}%
+
+\newcommand{\paragraphx}[1]{%
+  \vspace{3mm}%
+  \noindent\textbf{#1}%
+  \vspace{2mm}%
+}%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Project specifics
+
+\newcommand{\component}[1]{\texttt{#1}}
+\newcommand{\variable}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1}}
+\newcommand{\mykeyword}[1]{\texttt{#1}}
+\newcommand{\program}[1]{\textit{#1}}
+\newcommand{\file}[1]{\textit{#1}}
+\newcommand{\field}[1]{\texttt{#1}}
+\newcommand{\struct}[1]{\texttt{#1}}
+\newcommand{\smallcode}[1]{\fcolorbox{writer}{codebg}{#1}}%
+
+
+% Counters
+
+
+%\renewcommand\thefigure{\thesection.\arabic{figure}}
+
+\renewcommand{\@makechapterhead}[1]{%
+%  \vspace*{50\p@}%
+  {\parindent \z@ \raggedright \normalfont
+%    \hrule                                        % horizontal line
+%    \vspace{5pt}%                                 % add vertical space
+    \ifnum \c@secnumdepth >\m@ne
+%        \huge\scshape \@chapapp\space \thechapter % Chapter number
+        \par\nobreak
+%        \vskip 20\p@
+    \fi
+    \interlinepenalty\@M
+    \Huge\bf \thechapter \space  #1\par                         % chapter title
+    \vspace{5pt}%                                 % add vertical space
+    \hrule                                        % horizontal rule
+    \nobreak
+    \vskip 40\p@
+  }}
+
+\renewcommand{\@makeschapterhead}[1]{%
+%  \vspace*{50\p@}%
+  {\parindent \z@ \raggedright \normalfont
+%    \hrule                                        % horizontal line
+%    \vspace{5pt}%                                 % add vertical space
+    \interlinepenalty\@M
+    \Huge\bf  #1\par                         % chapter title
+    \vspace{5pt}%                                 % add vertical space
+    \hrule                                        % horizontal rule
+    \nobreak
+    \vskip 40\p@
+  }}
+
+
+%\renewcommand\section{%
+%\renewcommand\chapter{%
+%\setcounter{figure}{0}%
+%\ResetAcronym%
+%\setcounter{figure}{0}
+%\setcounter{table}{0}
+
+%\refstepcounter{section}%
+%\refstepcounter{chapter}%
+%%%% DIKU Styles
+%\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\centering\reset@font\normalsize\bfseries}%
+%%%% Normal style
+%\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\centering\large\bf}%
+%\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\centering\large\bf}%
+%\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\large\bf}%
+%}%
+
+\newcommand\prepchapter{%
+  \ResetAcronym%
+  \setcounter{figure}{0}
+  \setcounter{table}{0}
+  \setcounter{elisting}{0}
+}%
+
+\newcommand\startAppendix{%
+	\renewcommand\section{%
+	%\setcounter{figure}{0}%
+	\ResetAcronym%
+	%%%% DIKU Styles
+	%\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\centering\reset@font\normalsize\bfseries}%
+	%%%% Normal style
+	\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\centering\large\bf}%
+	}%
+}
+
+\def\subsection{\@startsection {subsection}{2}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\normalsize\bf}}%
+
+%\def\subsubsubsection{\@startsection {subsubsubsection}{4}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\normalsize\it}}%

@@ -1,0 +1,545 @@
+non-existing path in 'numpy/distutils': 'site.cfg'
+F2PY Version 2_5972
+blas_opt_info:
+blas_mkl_info:
+  libraries mkl,vml,guide not found in /usr/local/lib
+  libraries mkl,vml,guide not found in /usr/lib
+  NOT AVAILABLE
+
+atlas_blas_threads_info:
+Setting PTATLAS=ATLAS
+  libraries ptf77blas,ptcblas,atlas not found in /usr/local/lib
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib/atlas
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib/sse2
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib
+  NOT AVAILABLE
+
+atlas_blas_info:
+  libraries f77blas,cblas,atlas not found in /usr/local/lib
+  FOUND:
+    libraries = ['f77blas', 'cblas', 'atlas']
+    library_dirs = ['/usr/lib/atlas']
+    language = c
+    include_dirs = ['/usr/include/atlas']
+
+customize GnuFCompiler
+Found executable /usr/bin/g77
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler using config
+compiling '_configtest.c':
+
+/* This file is generated from numpy/distutils/system_info.py */
+void ATL_buildinfo(void);
+int main(void) {
+  ATL_buildinfo();
+  return 0;
+}
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-c'
+gcc: _configtest.c
+gcc -pthread _configtest.o -L/usr/lib/atlas -lf77blas -lcblas -latlas -o _configtest
+ATLAS version 3.6.0 built by buildd on Wed Jun  2 15:47:56 UTC 2004:
+   UNAME    : Linux voltaire 2.4.26-voltaire #1 SMP Tue Apr 20 12:46:28 EDT 2004 ppc GNU/Linux
+   INSTFLG  : 
+   MMDEF    : 
+   ARCHDEF  : 
+   F2CDEFS  : -DAdd__ -DStringSunStyle
+   CACHEEDGE: 262144
+   F77      : /usr/bin/g77, version GNU Fortran (GCC) 3.3.3 (Debian 20040422)
+   F77FLAGS : -O
+   CC       : /usr/bin/gcc, version gcc (GCC) 3.3.3 (Debian 20040422)
+   CC FLAGS : -fomit-frame-pointer -O3 -maltivec -mabi=altivec
+   MCC      : /usr/bin/gcc, version gcc (GCC) 3.3.3 (Debian 20040422)
+   MCCFLAGS : -fomit-frame-pointer -O2 -fschedule-insns -fno-schedule-insns2 -maltivec -mabi=altivec
+success!
+removing: _configtest.c _configtest.o _configtest
+  FOUND:
+    libraries = ['f77blas', 'cblas', 'atlas']
+    library_dirs = ['/usr/lib/atlas']
+    language = c
+    define_macros = [('ATLAS_INFO', '"\\"3.6.0\\""')]
+    include_dirs = ['/usr/include/atlas']
+
+lapack_opt_info:
+lapack_mkl_info:
+mkl_info:
+  libraries mkl,vml,guide not found in /usr/local/lib
+  libraries mkl,vml,guide not found in /usr/lib
+  NOT AVAILABLE
+
+  NOT AVAILABLE
+
+atlas_threads_info:
+Setting PTATLAS=ATLAS
+  libraries ptf77blas,ptcblas,atlas not found in /usr/local/lib
+  libraries lapack_atlas not found in /usr/local/lib
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib/atlas
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib/sse2
+  libraries lapack_atlas not found in /usr/lib/sse2
+  libraries ptf77blas,ptcblas,atlas not found in /usr/lib
+  libraries lapack_atlas not found in /usr/lib
+numpy.distutils.system_info.atlas_threads_info
+  NOT AVAILABLE
+
+atlas_info:
+  libraries f77blas,cblas,atlas not found in /usr/local/lib
+  libraries lapack_atlas not found in /usr/local/lib
+numpy.distutils.system_info.atlas_info
+  FOUND:
+    libraries = ['lapack', 'f77blas', 'cblas', 'atlas']
+    library_dirs = ['/usr/lib/atlas']
+    language = f77
+    include_dirs = ['/usr/include/atlas']
+
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler using config
+compiling '_configtest.c':
+
+/* This file is generated from numpy/distutils/system_info.py */
+void ATL_buildinfo(void);
+int main(void) {
+  ATL_buildinfo();
+  return 0;
+}
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-c'
+gcc: _configtest.c
+gcc -pthread _configtest.o -L/usr/lib/atlas -llapack -lf77blas -lcblas -latlas -o _configtest
+ATLAS version 3.6.0 built by buildd on Wed Jun  2 15:47:56 UTC 2004:
+   UNAME    : Linux voltaire 2.4.26-voltaire #1 SMP Tue Apr 20 12:46:28 EDT 2004 ppc GNU/Linux
+   INSTFLG  : 
+   MMDEF    : 
+   ARCHDEF  : 
+   F2CDEFS  : -DAdd__ -DStringSunStyle
+   CACHEEDGE: 262144
+   F77      : /usr/bin/g77, version GNU Fortran (GCC) 3.3.3 (Debian 20040422)
+   F77FLAGS : -O
+   CC       : /usr/bin/gcc, version gcc (GCC) 3.3.3 (Debian 20040422)
+   CC FLAGS : -fomit-frame-pointer -O3 -maltivec -mabi=altivec
+   MCC      : /usr/bin/gcc, version gcc (GCC) 3.3.3 (Debian 20040422)
+   MCCFLAGS : -fomit-frame-pointer -O2 -fschedule-insns -fno-schedule-insns2 -maltivec -mabi=altivec
+success!
+removing: _configtest.c _configtest.o _configtest
+  FOUND:
+    libraries = ['lapack', 'f77blas', 'cblas', 'atlas']
+    library_dirs = ['/usr/lib/atlas']
+    language = f77
+    define_macros = [('ATLAS_INFO', '"\\"3.6.0\\""')]
+    include_dirs = ['/usr/include/atlas']
+
+running install
+running build
+running config_cc
+unifing config_cc, config, build_clib, build_ext, build commands --compiler options
+running config_fc
+unifing config_fc, config, build_clib, build_ext, build commands --fcompiler options
+running build_src
+building py_modules sources
+building extension "numpy.core.multiarray" sources
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h' to sources.
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h' to sources.
+executing numpy/core/code_generators/generate_numpy_api.py
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h' to sources.
+conv_template:> build/src.linux-ppc64-2.5/numpy/core/src/scalartypes.inc
+  adding 'build/src.linux-ppc64-2.5/numpy/core/src' to include_dirs.
+conv_template:> build/src.linux-ppc64-2.5/numpy/core/src/arraytypes.inc
+numpy.core - nothing done with h_files = ['build/src.linux-ppc64-2.5/numpy/core/src/scalartypes.inc', 'build/src.linux-ppc64-2.5/numpy/core/src/arraytypes.inc', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h']
+building extension "numpy.core.umath" sources
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h' to sources.
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h' to sources.
+executing numpy/core/code_generators/generate_ufunc_api.py
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__ufunc_api.h' to sources.
+conv_template:> build/src.linux-ppc64-2.5/numpy/core/src/umathmodule.c
+  adding 'build/src.linux-ppc64-2.5/numpy/core/src' to include_dirs.
+numpy.core - nothing done with h_files = ['build/src.linux-ppc64-2.5/numpy/core/src/scalartypes.inc', 'build/src.linux-ppc64-2.5/numpy/core/src/arraytypes.inc', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__ufunc_api.h']
+building extension "numpy.core._sort" sources
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h' to sources.
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h' to sources.
+executing numpy/core/code_generators/generate_numpy_api.py
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h' to sources.
+numpy.core - nothing done with h_files = ['build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h']
+building extension "numpy.core.scalarmath" sources
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h' to sources.
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h' to sources.
+executing numpy/core/code_generators/generate_numpy_api.py
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h' to sources.
+executing numpy/core/code_generators/generate_ufunc_api.py
+  adding 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__ufunc_api.h' to sources.
+numpy.core - nothing done with h_files = ['build/src.linux-ppc64-2.5/numpy/core/include/numpy/config.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/numpyconfig.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h', 'build/src.linux-ppc64-2.5/numpy/core/include/numpy/__ufunc_api.h']
+building extension "numpy.core._dotblas" sources
+  adding 'numpy/core/blasdot/_dotblas.c' to sources.
+building extension "numpy.lib._compiled_base" sources
+building extension "numpy.numarray._capi" sources
+building extension "numpy.fft.fftpack_lite" sources
+building extension "numpy.linalg.lapack_lite" sources
+  adding 'numpy/linalg/lapack_litemodule.c' to sources.
+  adding 'numpy/linalg/python_xerbla.c' to sources.
+building extension "numpy.random.mtrand" sources
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler using config
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-Inumpy/core/src -Inumpy/core/include -I/home/jens/python/Python-2.5.2/Include -I/home/jens/python/Python-2.5.2 -c'
+gcc: _configtest.c
+gcc -pthread _configtest.o -o _configtest
+_configtest
+failure.
+removing: _configtest.c _configtest.o _configtest
+building data_files sources
+running build_py
+copying build/src.linux-ppc64-2.5/numpy/__config__.py -> build/lib.linux-ppc64-2.5/numpy
+copying numpy/distutils/ccompiler.py -> build/lib.linux-ppc64-2.5/numpy/distutils
+copying build/src.linux-ppc64-2.5/numpy/distutils/__config__.py -> build/lib.linux-ppc64-2.5/numpy/distutils
+copying numpy/linalg/linalg.py -> build/lib.linux-ppc64-2.5/numpy/linalg
+running build_ext
+customize UnixCCompiler
+customize UnixCCompiler using build_ext
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler
+gnu: no Fortran 90 compiler found
+gnu: no Fortran 90 compiler found
+customize GnuFCompiler using build_ext
+building 'numpy.core.multiarray' extension
+compiling C sources
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-Ibuild/src.linux-ppc64-2.5/numpy/core/src -Inumpy/core/include -Ibuild/src.linux-ppc64-2.5/numpy/core/include/numpy -Inumpy/core/src -Inumpy/core/include -I/home/jens/python/Python-2.5.2/Include -I/home/jens/python/Python-2.5.2 -c'
+gcc: numpy/core/src/multiarraymodule.c
+In file included from numpy/core/src/multiarraymodule.c:33:
+/home/jens/files_with_comments/pputest/libppu.h:39: warning: function declaration isn’t a prototype
+In file included from numpy/core/src/multiarraymodule.c:35:
+/home/jens/files_with_comments/pputest/timer.h:24: warning: function declaration isn’t a prototype
+/home/jens/files_with_comments/pputest/timer.h:26: warning: function declaration isn’t a prototype
+/home/jens/files_with_comments/pputest/timer.h:32: warning: function declaration isn’t a prototype
+In file included from numpy/core/src/multiarraymodule.c:36:
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdot.h:4: warning: this decimal constant is unsigned only in ISO C90
+In file included from numpy/core/src/multiarraymodule.c:37:
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/sdotv.h:4: warning: this decimal constant is unsigned only in ISO C90
+In file included from numpy/core/src/multiarraymodule.c:38:
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2.h:4: warning: this decimal constant is unsigned only in ISO C90
+In file included from numpy/core/src/multiarraymodule.c:39:
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+/home/jens/files_with_comments/pputest/snrm2v.h:4: warning: this decimal constant is unsigned only in ISO C90
+In file included from numpy/core/src/arrayobject.c:43,
+                 from numpy/core/src/multiarraymodule.c:118:
+/home/jens/files_with_comments/pputest/libppu.c:26: warning: function declaration isn’t a prototype
+/home/jens/files_with_comments/pputest/libppu.c: In function ‘CreateSPEThread’:
+/home/jens/files_with_comments/pputest/libppu.c:32: warning: format ‘%x’ expects type ‘unsigned int’, but argument 2 has type ‘void *’
+In file included from numpy/core/src/arrayobject.c:44,
+                 from numpy/core/src/multiarraymodule.c:118:
+/home/jens/files_with_comments/pputest/binreader.c: In function ‘binreader’:
+/home/jens/files_with_comments/pputest/binreader.c:21: warning: return makes integer from pointer without a cast
+In file included from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arrayobject.c:46:1: warning: "MAX_SPE_THREADS" redefined
+In file included from numpy/core/src/multiarraymodule.c:32:
+/home/jens/files_with_comments/pputest/common_ppu.h:14:1: warning: this is the location of the previous definition
+In file included from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arrayobject.c: In function ‘MULT’:
+numpy/core/src/arrayobject.c:140: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:141: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:142: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:173: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c:184: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c:150: warning: unused variable ‘r’
+numpy/core/src/arrayobject.c:148: warning: unused variable ‘results’
+numpy/core/src/arrayobject.c:132: warning: unused variable ‘res’
+numpy/core/src/arrayobject.c: At top level:
+numpy/core/src/arrayobject.c:222: warning: return type defaults to ‘int’
+numpy/core/src/arrayobject.c: In function ‘array_multiply_custom_new’:
+numpy/core/src/arrayobject.c:237: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c: In function ‘GenericShaderSwitcher’:
+numpy/core/src/arrayobject.c:257: warning: passing argument 2 of ‘array_multiply_custom_new’ from incompatible pointer type
+In file included from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arrayobject.c:396:3: warning: "/*" within comment
+numpy/core/src/arrayobject.c:398:1: warning: "/*" within comment
+In file included from numpy/core/src/arrayobject.c:924,
+                 from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arraytypes.inc.src: In function ‘LONG_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘long int’
+numpy/core/src/arraytypes.inc.src: In function ‘ULONG_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_ulong’
+numpy/core/src/arraytypes.inc.src: In function ‘LONGLONG_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_longlong’
+numpy/core/src/arraytypes.inc.src: In function ‘ULONGLONG_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_ulonglong’
+numpy/core/src/arraytypes.inc.src: In function ‘FLOAT_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘double’
+numpy/core/src/arraytypes.inc.src: In function ‘DOUBLE_setitem’:
+numpy/core/src/arraytypes.inc.src:152: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘double’
+numpy/core/src/arraytypes.inc.src: In function ‘PyArray_DescrFromType’:
+numpy/core/src/arraytypes.inc.src:2582: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PyArray_Descr *’
+In file included from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arrayobject.c: In function ‘slice_GetIndices’:
+numpy/core/src/arrayobject.c:2662: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PySliceObject *’
+numpy/core/src/arrayobject.c:2749: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PySliceObject *’
+numpy/core/src/arrayobject.c: In function ‘parse_index’:
+numpy/core/src/arrayobject.c:2864: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_intp *’
+numpy/core/src/arrayobject.c:2867: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_intp *’
+numpy/core/src/arrayobject.c:2966: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_intp *’
+numpy/core/src/arrayobject.c:2969: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘npy_intp *’
+numpy/core/src/arrayobject.c: In function ‘PyArray_GenericBinaryFunction’:
+numpy/core/src/arrayobject.c:4118: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘PyObject’
+numpy/core/src/arrayobject.c:4118: warning: format ‘%d’ expects type ‘int’, but argument 3 has type ‘PyObject’
+numpy/core/src/arrayobject.c: At top level:
+numpy/core/src/arrayobject.c:4228: warning: function declaration isn’t a prototype
+numpy/core/src/arrayobject.c:4348: warning: function declaration isn’t a prototype
+numpy/core/src/arrayobject.c: In function ‘fillExampleMatrices’:
+numpy/core/src/arrayobject.c:4444: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char **’
+numpy/core/src/arrayobject.c:4456: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c:4457: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/arrayobject.c:4458: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PyArrayObject2 *’
+numpy/core/src/arrayobject.c:4493: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c:4494: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/arrayobject.c:4495: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PyArrayObject2 *’
+numpy/core/src/arrayobject.c:4499: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arrayobject.c: At top level:
+numpy/core/src/arrayobject.c:4534: warning: function declaration isn’t a prototype
+numpy/core/src/arrayobject.c: In function ‘DivideJobsBetweenSPEs’:
+numpy/core/src/arrayobject.c:4553: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4554: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4555: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4556: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4558: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4561: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4562: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4563: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4564: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4566: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4569: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4570: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4571: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4572: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4574: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4577: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4578: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4579: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c:4580: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c:4582: warning: assignment makes integer from pointer without a cast
+numpy/core/src/arrayobject.c: In function ‘ppu_pthread_function’:
+numpy/core/src/arrayobject.c:4616: warning: too many arguments for format
+numpy/core/src/arrayobject.c:4617: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘struct PyArrayObject *’
+numpy/core/src/arrayobject.c:4617: warning: format ‘%d’ expects type ‘int’, but argument 3 has type ‘struct PyArrayObject *’
+numpy/core/src/arrayobject.c:4617: warning: format ‘%d’ expects type ‘int’, but argument 4 has type ‘struct PyArrayObject *’
+numpy/core/src/arrayobject.c: In function ‘array_multiply_custom’:
+numpy/core/src/arrayobject.c:4637: warning: initialization from incompatible pointer type
+numpy/core/src/arrayobject.c:4744: warning: implicit declaration of function ‘main_from_PPUTEST’
+numpy/core/src/arrayobject.c:4746: warning: assignment from incompatible pointer type
+numpy/core/src/arrayobject.c: At top level:
+numpy/core/src/arrayobject.c:4901: warning: function declaration isn’t a prototype
+In file included from numpy/core/src/arrayobject.c:6562,
+                 from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arraymethods.c: In function ‘array_toscalar’:
+numpy/core/src/arraymethods.c:505: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:505: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:506: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:506: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:507: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:507: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:508: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:508: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:509: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:509: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:510: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:510: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:511: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:511: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:512: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:512: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:513: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:513: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:514: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:514: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:515: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:515: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:516: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:516: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:517: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:517: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:518: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:518: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:519: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:519: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:520: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:520: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:521: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:521: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:522: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:522: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:523: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:523: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:524: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:524: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:525: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:525: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:526: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:526: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:527: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:527: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:528: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:528: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:529: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:529: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:530: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:530: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:531: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:531: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:532: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:532: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:533: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:533: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:534: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:534: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:535: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:535: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:536: warning: cast to pointer from integer of different size
+numpy/core/src/arraymethods.c:536: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘unsigned int *’
+numpy/core/src/arraymethods.c:571: warning: format ‘%f’ expects type ‘double’, but argument 2 has type ‘int’
+numpy/core/src/arraymethods.c:578: warning: format ‘%f’ expects type ‘double’, but argument 2 has type ‘npy_intp’
+numpy/core/src/arraymethods.c:579: warning: format ‘%f’ expects type ‘double’, but argument 2 has type ‘npy_intp’
+In file included from numpy/core/src/arrayobject.c:6562,
+                 from numpy/core/src/multiarraymodule.c:118:
+numpy/core/src/arraymethods.c:1975:1: warning: multi-line comment
+numpy/core/src/multiarraymodule.c: In function ‘PyArray_Newshape’:
+numpy/core/src/multiarraymodule.c:798: warning: implicit declaration of function ‘numpy2FHB’
+numpy/core/src/multiarraymodule.c: At top level:
+numpy/core/src/multiarraymodule.c:7851: warning: function declaration isn’t a prototype
+numpy/core/src/multiarraymodule.c: In function ‘createDataBlocks’:
+numpy/core/src/multiarraymodule.c:8691: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:8692: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:8695: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:8695: warning: format ‘%d’ expects type ‘int’, but argument 3 has type ‘char *’
+numpy/core/src/multiarraymodule.c:8723: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:9068: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:9069: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:9076: warning: format ‘%d’ expects type ‘int’, but argument 2 has type ‘char *’
+numpy/core/src/multiarraymodule.c:8548: warning: unused variable ‘oldRowCopySize’
+numpy/core/src/multiarraymodule.c:8530: warning: unused variable ‘newColCount’
+numpy/core/src/multiarraymodule.c:8529: warning: unused variable ‘newRowCount’
+numpy/core/src/multiarraymodule.c:8528: warning: unused variable ‘oldRowCount’
+numpy/core/src/multiarraymodule.c:8527: warning: unused variable ‘blockCount’
+numpy/core/src/multiarraymodule.c:8376: warning: unused variable ‘y_cuts_divide’
+numpy/core/src/multiarraymodule.c:8348: warning: unused variable ‘o’
+numpy/core/src/multiarraymodule.c:8331: warning: unused variable ‘newData’
+numpy/core/src/multiarraymodule.c:8330: warning: unused variable ‘oldData’
+numpy/core/src/multiarraymodule.c: At top level:
+numpy/core/src/multiarraymodule.c:9266: warning: conflicting types for ‘numpy2FHB’
+numpy/core/src/multiarraymodule.c:798: warning: previous implicit declaration of ‘numpy2FHB’ was here
+numpy/core/src/multiarraymodule.c:9416:3: warning: multi-line comment
+numpy/core/src/multiarraymodule.c:9474:3: warning: multi-line comment
+numpy/core/src/multiarraymodule.c: In function ‘array_multiply_custom_new’:
+numpy/core/src/arrayobject.c:240: warning: control reaches end of non-void function
+numpy/core/src/multiarraymodule.c: At top level:
+numpy/core/src/arrayobject.c:244: warning: ‘GenericShaderSwitcher’ defined but not used
+numpy/core/src/arrayobject.c:4627: warning: ‘array_multiply_custom’ defined but not used
+numpy/core/src/arraymethods.c:2017: warning: ‘mintestMethods’ defined but not used
+numpy/core/src/arrayobject.c: In function ‘array_multiply’:
+numpy/core/src/arrayobject.c:4881: warning: ‘resultObject’ is used uninitialized in this function
+gcc -pthread -shared build/temp.linux-ppc64-2.5/numpy/core/src/multiarraymodule.o -lm -lspe2 -o build/lib.linux-ppc64-2.5/numpy/core/multiarray.so
+building 'numpy.core.umath' extension
+compiling C sources
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-Ibuild/src.linux-ppc64-2.5/numpy/core/src -Inumpy/core/include -Ibuild/src.linux-ppc64-2.5/numpy/core/include/numpy -Inumpy/core/src -Inumpy/core/include -I/home/jens/python/Python-2.5.2/Include -I/home/jens/python/Python-2.5.2 -c'
+gcc: build/src.linux-ppc64-2.5/numpy/core/src/umathmodule.c
+gcc -pthread -shared build/temp.linux-ppc64-2.5/build/src.linux-ppc64-2.5/numpy/core/src/umathmodule.o -lm -lspe2 -o build/lib.linux-ppc64-2.5/numpy/core/umath.so
+building 'numpy.core._dotblas' extension
+compiling C sources
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-DATLAS_INFO="\"3.6.0\"" -Inumpy/core/blasdot -I/usr/include/atlas -Inumpy/core/include -Ibuild/src.linux-ppc64-2.5/numpy/core/include/numpy -Inumpy/core/src -Inumpy/core/include -I/home/jens/python/Python-2.5.2/Include -I/home/jens/python/Python-2.5.2 -c'
+gcc: numpy/core/blasdot/_dotblas.c
+numpy/core/blasdot/_dotblas.c: In function ‘FLOAT_dot’:
+numpy/core/blasdot/_dotblas.c:19: warning: implicit declaration of function ‘prinf’
+gcc -pthread -shared build/temp.linux-ppc64-2.5/numpy/core/blasdot/_dotblas.o -L/usr/lib/atlas -lf77blas -lcblas -latlas -lspe2 -o build/lib.linux-ppc64-2.5/numpy/core/_dotblas.so
+building 'numpy.random.mtrand' extension
+compiling C sources
+C compiler: gcc -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC
+
+compile options: '-Inumpy/core/include -Ibuild/src.linux-ppc64-2.5/numpy/core/include/numpy -Inumpy/core/src -Inumpy/core/include -I/home/jens/python/Python-2.5.2/Include -I/home/jens/python/Python-2.5.2 -c'
+gcc: numpy/random/mtrand/distributions.c
+gcc: numpy/random/mtrand/mtrand.c
+gcc: numpy/random/mtrand/randomkit.c
+gcc: numpy/random/mtrand/initarray.c
+gcc -pthread -shared build/temp.linux-ppc64-2.5/numpy/random/mtrand/mtrand.o build/temp.linux-ppc64-2.5/numpy/random/mtrand/randomkit.o build/temp.linux-ppc64-2.5/numpy/random/mtrand/initarray.o build/temp.linux-ppc64-2.5/numpy/random/mtrand/distributions.o -lspe2 -o build/lib.linux-ppc64-2.5/numpy/random/mtrand.so
+running scons
+running build_scripts
+  adding 'build/scripts.linux-ppc64-2.5/f2py' to scripts
+running install_lib
+copying build/lib.linux-ppc64-2.5/numpy/__config__.py -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy
+copying build/lib.linux-ppc64-2.5/numpy/core/umath.so -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core
+copying build/lib.linux-ppc64-2.5/numpy/core/_dotblas.so -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core
+copying build/lib.linux-ppc64-2.5/numpy/core/multiarray.so -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core
+copying build/lib.linux-ppc64-2.5/numpy/distutils/__config__.py -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/distutils
+copying build/lib.linux-ppc64-2.5/numpy/distutils/ccompiler.py -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/distutils
+copying build/lib.linux-ppc64-2.5/numpy/linalg/linalg.py -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/linalg
+copying build/lib.linux-ppc64-2.5/numpy/random/mtrand.so -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/random
+byte-compiling /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/__config__.py to __config__.pyc
+byte-compiling /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/distutils/__config__.py to __config__.pyc
+byte-compiling /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/distutils/ccompiler.py to ccompiler.pyc
+byte-compiling /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/linalg/linalg.py to linalg.pyc
+running install_scripts
+changing mode of /home/jens/bin/numpy/bin/f2py to 775
+running install_data
+copying numpy/core/include/numpy/ndarrayobject.h -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core/include/numpy
+copying build/src.linux-ppc64-2.5/numpy/core/include/numpy/__multiarray_api.h -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core/include/numpy
+copying build/src.linux-ppc64-2.5/numpy/core/include/numpy/multiarray_api.txt -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core/include/numpy
+copying build/src.linux-ppc64-2.5/numpy/core/include/numpy/__ufunc_api.h -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core/include/numpy
+copying build/src.linux-ppc64-2.5/numpy/core/include/numpy/ufunc_api.txt -> /home/jens/bin/numpy/lib/python2.5/site-packages/numpy/core/include/numpy
+running install_egg_info
+Removing /home/jens/bin/numpy/lib/python2.5/site-packages/numpy-1.2.1-py2.5.egg-info
+Writing /home/jens/bin/numpy/lib/python2.5/site-packages/numpy-1.2.1-py2.5.egg-info

@@ -1,0 +1,289 @@
+The purpose of this master thesis was to realize an implementation of
+NumPy on the \CBE{}. This would benefit NumPy programmers to utilize
+the powers of the \CBE\ without having to know anything about its
+composition. 
+
+A general framework to execute code on the SPE's was designed and implemented.
+In the following text this framework is also referred to the Dispatcher and Shader system.
+This framework was used effectively to port NumPy functionality to the Cell BE.
+However, the framework can be reused in other contexts, and is not specific to NumPy.
+
+Our Dispatcher and Shader system worked very well. It was used to port
+NumPy functionality to the Cell BE and performance comparisons was
+made against a standard NumPy installation running on the PPE, a quad
+core and a duo core. In these tests the NumPy functionality
+performance was improved with an order of magnitude of 20 on
+average compared to the \PPE{}.
+
+Tests were also done to compare our implementation with
+IBM \BLAS{}. This test does not indicate whether or not it makes sense
+to port NumPy to the Cell BE of course, but it was interesting to see
+the results nonetheless. They are described in this chapter in
+section \ref{sec:IBMBLAS}.
+
+All the functionality needed for executing the three benchmark
+applications was implemented for the Cell BE using our framework, and
+most of this functionality was integrated in NumPy. However, because
+it was very time consuming work to analyze and modify NumPy, we chose
+to run the final performance tests solely through a separate Python
+module. This does not give any significant performance differences to
+running the tests through NumPy, since this is essentially also the
+way NumPy is implemented.
+
+We ended up having only a few unresolved issues with NumPy in order to
+be able to run all three test programs using it. These were
+more specifically pointer-issues related to UFUNCS (NumPy's Universal
+Functions), where we needed to pass pointers to our new data structure
+instead of the old one. This is in itself not an interesting problem
+to solve and we could without a doubt have solved it, but because we
+had already spend a lot of time hooking up other functionalities in
+NumPy and because NumPy itself takes a long time to install and
+thereby work with, we decided to create our own Python module for the
+final tests. The dispatcher and shader system was used for this new
+module in exactly the same way it was used with NumPy. The
+same \texttt{PyArrayObject} data structure from NumPy was also used in
+the new module. \\
+
+In the following sections, we will discuss the overall conclusions
+achieved in this thesis. Finally, we will discuss the future works
+based on our thesis.
+
+\section{Cost Benefits With Cell BE}
+
+With the performance results given in the last chapter, it can safely
+be concluded, that the \CBE\ is an outstanding processor. Even for
+small computations seen in the \SOR\ test program, the \CBE\
+outperformed the other architectures. Though, the \CBE\ would not
+perform better with this particular test program with a Blade center
+or a cluster of PlayStations, the performance were very good with the
+other two.
+
+When the \PS\ came out(2006-2007), it was sold for around 4.000 dkk,
+it can now be bought for less than 3.000 dkk. The retail price for the
+quad core was at the time of purchase(2007) 7.000 dkk, which is of
+course dropped in price since. Nevertheless, for the price of one quad
+core, roughly two \PS{}'s can be bought. This fact gives much more
+reason to use the \CBE\ for scientific computations.
+
+\section{Contiguous Memory Layout vs. FHB}
+
+The layout of \FHB\ can give great performance when working on the
+\CBE{}. Having data layed out in blocks, ready to transfer, makes it a
+lot easier to enable double buffering and facilitates easy reusage of
+data.
+
+While having great benefits, it also haves some disadvantageous. The
+\LAPACK\ routines uses a great deal of sub matrices and sub vectors
+from matrices. This can cause a lot of extra logic to the shader,
+because it must allow for misaligned data accesses.
+
+In solving a system of linear equations, the advantage is, that the LU
+factorization utilizes a blocked algorithm, which easily could be
+translated into the FHB layout. At one point, a column vector is used
+in the algorithm, in this instance extracting the vector into a new
+row major vector on the \PPE{}, gave better performance than having
+the \SPEv{'s} handle misaligned data accesses.
+
+\section{IBM BLAS}
+\label{sec:IBMBLAS}
+
+One of the motivations behind this thesis were the results stated in
+T{\o}nnensens thesis\cite{scipy}. In this report an implementation of
+level 3 \BLAS\ multiplication routine is implemented, showing a
+performance 32 times better than a similar test done using the
+IBM \BLAS\ library.
+
+In our project, we did not see these kinds of performance
+differences. In fact, IBM \BLAS\ proved to be quite effective. Tests
+with IBM \BLAS\ should be fair so the library was tested with aligned
+data (this implies a two dimensional data layout, where each row is
+padded at the end to make each row aligned). In the tests we proved
+IBM \BLAS\ to be faster than our own optimized level 3 \BLAS\ routines
+with a factor of around 2,5 on average for smaller problem
+instances. However, our implementations worked in-place to a higher
+degree than IBM \BLAS{}, so on larger problem instances our
+implementations performed better than IBM \BLAS\ with a factor of at
+least 8. This large factor of difference was caused by the need for
+swapping memory to disk, when running the IBM \BLAS\ routines. It is a
+problem for IBM \BLAS\ that so much memory is needed. Scientists, and
+other people using the library, might have calculated the maximum
+sizes of the problem instances they can keep in memory, without
+knowing that the library they use does in fact need much more memory.
+
+An interesting fact is also, that for some of the worst running times we observed for IBM \BLAS\ for large problem instances,
+the library was in fact slower than even an ATLAS implementation running only on a single core.
+
+If an implementation of \BLAS\ routines using the FHB data structure
+should be tested fairly against the IBM \BLAS\ implementation using a
+two dimensional data structure (to make the test fair, as stated
+above), we would expect to see that the FHB structure is in fact more
+effective. We assume, of course, that the problem size is chosen so
+it does not cause IBM \BLAS\ to swap memory to disk. However, the two
+implementations would, theoretically, have to be tuned to the same
+level of efficiency. Otherwise, the test could just end up showing
+results that were based on how well the given implementation was tuned
+and not which data structure was used. We assume that the reason that
+IBM \BLAS\ is a little faster than our implementations on smaller
+problem instances, is caused by the fact, that IBM has had more man
+hours and expertise tuning their algorithms than we have.
+
+\section{Single Precision, Double Precision and Complex Numbers}
+
+NumPy implements functionality for a wide variety of types. NumPyCBE
+only implements single precision at the time of writing. Extending
+NumPyCBE to double precision could be done trivially. When creating an
+array, twice the amount of memory should be allocated. The shaders
+uses the \CBE\ intrinsics, which also allows for double precision
+calculations.
+
+Our current version of of NumPyCBE utilizes the fact, that only single
+precision data is used, but altering the memory layout in the \LS{},
+done by the dispatcher, can easily be done to fit $64 \times 64$
+blocks.
+
+Contrary to double precision, complex numbers requires a lot more
+effort, due to their mathematical nature. Implementing them would
+require time and even more analysis, but it would be feasible. As
+floating points both have single precision and a double precision
+counterpart, complex numbers also have both. When the single
+precision complex number functionality is implemented, the double
+precision is implemented as easily as from single precision floating
+points to double precision floating points.
+
+With complex numbers a memory specific problem arises. With 16KB
+blocks it is possible to have $64 \times 64$ single precision numbers,
+$45 \times 45$ double precision numbers or single complex numbers, but
+only $32 \times 32$ double precision complex numbers. Though it seems,
+that it would create a huge problem, it actually doesn't. Even though
+double precision complex numbers uses 16 bytes of memory, it is
+composed of two double precision floating point numbers and hence
+doubles the amount of computations relative to the double precision
+floating point numbers.
+
+\section{Working With NumPy}
+
+NumPy is a really great module, but the size and complexity of its implementation
+is quite high. Hunting down specific functions from several thousands lines of code scattered
+around in numerous files, can be a very tedious and time consuming
+job. 
+
+NumPy comes with a great manual for end users, but nearly nothing
+exists on how the implementation is done. If we had known how much
+time it would take to analyze and modify NumPy before we started the
+project, we would probably have implemented our own separate Python module
+to begin with or maybe contacted Travis Oliphant\footnote{The maintainer of
+  NumPy} for some assistance.
+
+Because we decided to develop our own Python module, we had to change
+the syntax in our test programs a little. The semantics remain the
+same, but we have not implemented infix-operators and overloaded
+functions in our module, so the function calls look a little
+different. This is a minor issue and is only related to syntax.
+
+NumPy offers a possibility to utilize external libraries for various
+uses. Especially, it uses \BLAS\ and \LAPACK\ for its linear algebraic
+functionality. Incorporating IBM \BLAS\ seemed like a good idea, but
+the current version of NumPy requires a full installation of
+\ATLAS{}. Having IBM taking care of the \BLAS\ requirements for NumPy
+could have been a great comparison against NumPyCBE for linear
+arithmetic applications. However, tests were instead done calling IBM \BLAS\
+from C-code.
+
+If IBM \BLAS\ could have been used, another problem would arise. Since
+it loads a kernel into the \SPE{}'s, it makes it impossible for any
+other \CBE\ program to utilize the \SPE{}'s, without having to
+reload the kernel and other \SPU\ programs every time it is
+needed. This is not optimal and therefore, actually not a good idea,
+because NumPy is a lot more than \BLAS{}.
+
+\section{The Dispatcher}
+
+The final version of the dispatcher works very well, because it only
+implements basic functionality and haves the SPU shaders do nearly all
+the work. The first version of the dispatcher implemented data
+retrieval with double buffering. This provided a link between the
+dispatcher and the SPU shader, for which the SPU shaders did not have
+to transfer data itself, but rather the dispatcher. Though the idea
+seemed fine, the extra logic required to implement this link caused a
+significant slowdown in performance, thus the version was dismissed.
+
+Only having the dispatcher provide links to external libraries,
+information of the layout of the \LS{} and the given task, makes the
+dispatcher a fast and flexible foundation for executing SPU shaders.
+
+Given the fact, that SPU shaders are compiled as \PIC{}, an
+arbitrarily number of SPU shaders(though limited by the \LS{}) can be
+buffered by the dispatcher. Nevertheless, only a couple of buffers
+should be needed for double buffering code.
+
+The layout of the \LS\ can be altered arbitrarily given the
+programming needs. For our master thesis, we used single precision
+numbers, three blocks of data with two buffers each, giving us a lot
+of memory to our SPU shaders to use.
+
+\section{Simple Functionality and Composite Functionality}
+
+Given the results from the tests, it clearly states, that the
+functionality of NumPy can take advantage of the \CBE{}. Even with the
+simple functionality of multiply, add, sum and so on, achieves
+impressive speed ups. Some more than others. The simple functionality
+is simple and is rather simple to implement, whereas the composite
+functionality is hard to implement and are more difficult to harness
+the \CBE{}'s powers.
+
+Most of NumPy's core is simple functionality, which should be easy to
+implement, if a full NumPyCBE is wanted. 
+
+\section{Future Work}
+
+The work we have done in this master thesis can be used similar to
+NumPy. Although, it did not end up inside NumPy, it would be possible
+to incorporate the dispatcher and shader into NumPy.
+
+Though many functionalities have been implemented, more could be
+implemented into NumPyCBE to make it even useful. Many of the trivial
+functionalities have not been implemented, because they were not
+needed for our tests. 
+
+\subsection{BLAS and LAPACK}
+
+We have demonstrated that it is possible to develop competitive
+versions of some of the \BLAS\ and \LAPACK\ routines using the FHB
+layout. Especially, some of the level 1 and level 2 \BLAS\ routines
+can easily compete with IBM \BLAS{}. It is therefore feasible to
+complete at least a \BLAS\ library based on FHB.
+
+While the level 3 \BLAS\ routines, for example \function{SGEMM} and
+\function{STRSM}, needs a lot more work to achieve very good results,
+because they are far more complex. Though, based on the results we
+have made with our implementations, it is possible to achieve at least
+as good results as IBM.
+
+\subsection{Dispatcher and Shader}
+
+The results and experiences with our dispatcher and shader system
+works so well, that it could be used in other contexts. The shader
+ideology is also adopted by the game developing company Insomniac
+Games for their physics engine.
+
+So, combined they are a powerful tool when programming the \CBE\ and
+can easily be used elsewhere.
+
+\subsection{Cell Blade Server}
+
+Based on the performance measurements seen in this report, it would
+be worth trying to run NumPyCBE on more than one \CBE\ to solve problems faster.
+It is expected that a good performance increase would be gained by
+utilizing a Cell Blade server.
+
+The straight forward way of accomplishing this would simply be to
+view the Cell Blade server as a single \CBE{}, but with 16 \SPE{}'s instead
+of 8. A more interesting way to do it, would be to take the memory bandwidth
+between the two separate \CBE{}'s into account and redesign the algorithms in
+a way that utilizes each of the two \CBE{}'s more efficiently. This would include
+making sure that no unnecessary traffic occurs between the two EIB's.
+This in turn would likely require data to be transferred between \SPE{}'s and main
+on the shortest possible paths in the Cell Blade architecture.
+
+It would be interesting work to optimize the three benchmark applications for the
+Cell Blade server.

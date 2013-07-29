@@ -1,0 +1,8 @@
+import time
+import numpycbe
+X=numpycbe._create(64,64)
+numpycbe._initMultVectors(64,64)
+start=time.time()
+numpycbe._blas3Mult_lu(X,2)
+stop=time.time()
+print 'Time for blas3Mult_lu: ',  (stop-start)

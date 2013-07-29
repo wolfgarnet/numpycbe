@@ -1,0 +1,70 @@
+\scriptsize
+\begin{verbatim}
+SPU DD3.0
+***
+Total Cycle count               780925257
+Total Instruction count         1717159134
+Total CPI                       0.45
+***
+Performance Cycle count         773376904
+Performance Instruction count   107390610 (103513232)
+Performance CPI                 7.20 (7.47)
+
+Branch instructions             26385717
+Branch taken                    26336887
+Branch not taken                48830
+
+Hint instructions               59175
+Pipeline flushes                25628344
+SP operations (MADDs=2)         91394472
+DP operations (MADDs=2)         0
+
+Contention at LS between Load/Store and Prefetch 78004
+
+Single cycle                                          97227408 ( 12.6%)
+Dual cycle                                             3142912 (  0.4%)
+Nop cycle                                              2255568 (  0.3%)
+Stall due to branch miss                             435706971 ( 56.3%)
+Stall due to prefetch miss                                   0 (  0.0%)
+Stall due to dependency                              234491926 ( 30.3%)
+Stall due to fp resource conflict                            0 (  0.0%)
+Stall due to waiting for hint target                     24478 (  0.0%)
+Issue stalls due to pipe hazards                             0 (  0.0%)
+Channel stall cycle                                     527641 (  0.1%)
+SPU Initialization cycle                                     0 (  0.0%)
+-----------------------------------------------------------------------
+Total cycle                                          773376904 (100.0%)
+
+Stall cycles due to dependency on each instruction class
+ FX2        88885 (  0.0% of all dependency stalls)
+ SHUF       37431 (  0.0% of all dependency stalls)
+ FX3        73876 (  0.0% of all dependency stalls)
+ LS         53587157 ( 22.9% of all dependency stalls)
+ BR         0 (  0.0% of all dependency stalls)
+ SPR        127843215 ( 54.5% of all dependency stalls)
+ LNOP       0 (  0.0% of all dependency stalls)
+ NOP        0 (  0.0% of all dependency stalls)
+ FXB        0 (  0.0% of all dependency stalls)
+ FP6        52837423 ( 22.5% of all dependency stalls)
+ FP7        23939 (  0.0% of all dependency stalls)
+ FPD        0 (  0.0% of all dependency stalls)
+
+The number of used registers are 89, the used ratio is 69.53
+
+Instruction Class                               Insts Issued     Insts Exec    Exec Cycles    Cycles/Inst
+---------------------------------------------   ------------   ------------   ------------   ------------
+FX2 (EVEN): Logical and integer arithmetic          29042358      3168514       56405820          17.80
+SHUF (ODD): Shuffle, quad rotate/shift, mask         1840959      1677592        6855428           4.09
+FX3 (EVEN): Element rotate/shift                      118505        95014         334314           3.52
+LS   (ODD): Load/store, hint                        62281693     36581870      246346904           6.73
+BR   (ODD): Branch                                  51976694     26385717      156769436           5.94
+SPR  (ODD): Channel and SPR moves                  102314174     25606786      383649561          14.98
+LNOP (ODD): NOP                                       280979       165982              0           0.00
+NOP (EVEN): NOP                                      2200455      2177039              0           0.00
+FXB (EVEN): Special byte ops                               0            0              0           0.00
+FP6 (EVEN): SP floating point                       11424309     11424309       68545854           6.00
+FP7 (EVEN): Integer mult, float conversion            108336       107787         345142           3.20
+FPD (EVEN): DP floating point                              0            0              0           0.00
+
+dumped pipeline stats
+\end{verbatim}

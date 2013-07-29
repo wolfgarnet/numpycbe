@@ -1,0 +1,235 @@
+\chapter{Guides}
+
+\section{Dispatcher Guide}
+
+This is a brief guide of how the Dispatcher works.
+
+\subsection{Start Up}
+
+The dispatcher must be loaded into the \SPE{}'s \LS{}. This could be
+done with:
+
+\examplecode{code/dispatcherload.c}{Loads an SPE ELF into LS}{lst:dispatcherload}
+
+Each \SPE\ must be assigned a unique identification, starting at zero
+and counting upwards. Furthermore, each \SPE\ must be given a seed to
+initialize its random generator. This could be done by retrieving the
+number of seconds by the function \function{time()}.
+
+Given some defines in the file \function{common\_spu.h}, the sizes of the
+memory layout in the \LS\ can be changed. Their default values gives
+16KB memory per data block, 88KB for the shader and 12KB per actual
+shader.
+
+\examplecode{code/ls_layout.c}{The default values for the LS layout}{lst:lslayout}
+
+\subsection{Operations}
+
+Operations for the dispatcher, is given by the operation structure
+\struct{Operation\_t}, see code listing \ref{lst:operation_t}.
+
+\examplecode{code/operation_t.c}{The Operation\_t structure}{lst:operation_t}
+
+\subsection{States}
+
+The dispatcher, when successfully initialized, becomes a state
+machine. It implements several types of states, whereas they can be
+divided into two subgroups:
+
+\begin{itemize}
+\item{Functionality with an actual return values}
+\item{Functionality with no return value}
+\end{itemize}
+
+Functionality with no returns values, do indeed return something, just
+not something that involves the dispatcher, but only the given
+shader. An actual return value could be something the \PPE\ should
+complete. For example \function{sum}, each \SPE\ sums a specific part
+of the array and returns their intermediate results to the \PPE{},
+whom combines the results into one.
+
+The main difference is, that the \PPE\ program informs each of the
+dispatchers where their private intermediate result should be put in
+main memory. Otherwise, they look alike.
+
+In table \ref{tbl:states}, the various states can be seen. 
+
+\begin{table}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+State         & Operation ID  & Upload shader & Run shader & Specific return value & Signals \\
+\hline
+$0 \to 99$    & $0 \to 99$    & Yes           & Yes       & No                     & Yes \\
+$100 \to 199$ & $0 \to 99$    & Yes           & Yes       & Yes                    & Yes \\
+$200 \to 299$ & $0 \to 99$    & Yes           & No        & No                     & Yes \\
+$300 \to 399$ & $0 \to 99$    & No            & Yes       & No                     & No  \\
+$400 \to 499$ & $0 \to 99$    & Yes           & No        & Yes                    & Yes \\
+$500 \to 599$ & $0 \to 99$    & No            & Yes       & Yes                    & No  \\
+\hline
+$1000$        & $\varnothing$ & No            & No        & No                     & Yes \\
+\hline
+\end{tabular}
+\caption{Types of states for dispatcher\label{tbl:states}}
+\end{table}
+
+\section{Shader Guide}
+
+\section{NumPyCBE}
+
+\subsection{Installation}
+
+NumPyCBE is installed as easily as NumPy, though currently the
+installation must be done in \textit{/home/user/numpycbe}. And the
+actual install command is thus, in that specific directory,
+\texttt{``python setup.py install --prefix=.''}.  If the special
+NumPyCBE 64 block optimized version is wanted, the command
+\texttt{``python setup64.py install --prefix=.''}, should be used
+instead.
+
+To ensure that NumPyCBE can be loaded into any python script
+everywhere, the following addition to the \file{.bashrc} file
+required:
+
+\examplecode{code/bashrc}{.bashrc file}{lst:bashrc}
+
+
+\subsection{Functions}
+
+The functionality implemented in NumPyCBE is identical to
+NumPy. However, some of the syntax is a little different. This applies
+to general operator overloading. For example the index operator and
+plus operator.
+
+Table \ref{tbl:overload}, shows the corresponding NumPyCBE syntax.
+
+\begin{table}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Side  & Function   & NumPy Syntax & NumPyCBE syntax   & Notes \\
+\hline
+%Left & Assignment & var[x]       & setIndex(a,x,r,c) & a is the array, x is the value and r\newline and c are the row and column in the array \\
+Left  & Assignment & var[i] = x   & setIndex(a,x,r,c) & \mpage{5}{a is the array, x is the value and r and c are the row and column in the array} \\
+\hline
+Left  & Assignment & var[i] = x   & SetIndex(a,x,i,j) & \mpage{5}{a is the array, x is the value and i and j are the column and row in the array} \\
+\hline
+Right & Indexing   & x = var[i]   & index(a,x,r,c)    & \mpage{5}{a is the array, x is the value and r and c are the row and column in the array} \\
+\hline
+Right & Indexing   & x = var[i]   & Index(a,x,i,j)    & \mpage{5}{a is the array, x is the value and i and j are the column and row in the array} \\
+\hline
+Right & Infix      & a op b       & op(a,b)          & \mpage{5}{a and b are ndarrays or one of them is a scalar, and op is for example +, /, or +=} \\
+\hline
+\end{tabular}
+\caption{Operator overloading conversion\label{tbl:overload}}
+\end{table}
+
+In table \ref{tbl:numpycbefuncs} specific NumPyCBE functionalities are listed.
+
+
+\begin{table}
+\begin{tabular}{|c|c|}
+\hline
+Function        & Notes \\
+\hline
+SetBlockSize(x) & Sets the currently used block size for FHB\\
+\hline
+Print(a)        & Prints the ndarray\\
+\hline
+PrintS(a)       & Prints the ndarray with scientific notation\\
+\hline
+Create(x,y,v)   & Creates an ndarray with dimensions $y \times x$, with default value v\\
+\hline
+\end{tabular}
+\caption{NumPyCBE specific functionality\label{tbl:numpycbefuncs}}
+\end{table}
+
+The following lists the implemented NumPy functionality,
+
+\begin{itemize}
+\item{add}
+\item{arange}
+\item{array}
+\item{divide}
+\item{len}
+\item{lessequal}
+\item{multiply}
+\item{random}
+\item{shape}
+\item{subtract}
+\item{sum}
+\item{solve}
+\item{zeros}
+\end{itemize}
+
+Though it should be noted, that not all arguments are valid. For
+example, only multiply supports slicing.
+
+%\chapter{Test Programs}
+%\prepchapter
+%\label{chapter:code}
+
+%\section{Monte Carlo Python Code}
+%\label{sec:mc_code}
+
+%\subsection{NumPy}
+%\examplecode{../code/numpycbe/testprograms/MonteCarlo_org.py}{setup.py file for NumPyCBE}{lst:setup}
+
+%\subsection{NumPyCBE}
+
+%\section{SOR Python Code}
+%\label{sec:sor_code}
+
+%\subsection{NumPy}
+%\subsection{NumPyCBE}
+
+%\section{Solve Python Code}
+%\label{sec:solve_code}
+
+%\subsection{NumPy}
+%\subsection{NumPyCBE}
+
+
+
+
+
+
+
+
+
+\chapter{Code Listings}
+\prepchapter
+\label{app:listings}
+
+\section{Shader Code}
+
+\subsection{Generic Binary Function Framework}
+\label{app:gbff}
+\examplecode{code/genericbinaryshader.c}{Framework for the generic binary shader functionality}{lst:genericshader}
+
+
+\subsection{Generic Binary Addition}
+\label{app:g-addition}
+\examplecode{code/genericadd.c}{The \function{\_compute} function for array addition}{lst:genericadd}
+
+
+
+
+
+
+
+
+
+\chapter{Output}
+\prepchapter
+\section{Cell Simulator}
+
+\subsection{STRSM}
+\label{app:strsm}
+
+\input{appendix/sim}
+
+\section{SPU Timing Tool}
+
+\subsection{STRSM}
+\label{app:strsmtime}
+
+\input{appendix/sputiming}

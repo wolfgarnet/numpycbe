@@ -1,0 +1,17 @@
+simple.o:     file format elf32-spu
+
+Disassembly of section .text:
+
+000000c0 <simple>:
+  c0:	40 80 02 03 	il	$3,4
+  c4:	24 00 40 80 	stqd	$0,16($1)
+  c8:	1c 01 03 04 	ai	$4,$6,4
+  cc:	24 ff 80 81 	stqd	$1,-32($1)
+  d0:	1c f8 00 81 	ai	$1,$1,-32
+  d4:	38 80 c3 05 	lqx	$5,$6,$3
+  d8:	40 80 3d 83 	il	$3,123	# 7b
+  dc:	3b 81 02 82 	rotqby	$2,$5,$4
+  e0:	35 20 01 00 	bisl	$0,$2
+  e4:	1c 08 00 81 	ai	$1,$1,32	# 20
+  e8:	34 00 40 80 	lqd	$0,16($1)
+  ec:	35 00 00 00 	bi	$0

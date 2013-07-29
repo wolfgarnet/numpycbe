@@ -1,0 +1,165 @@
+%% Report template, by Christian Wolfgang. 20070322
+
+% Document class
+\documentclass[10pt,a4paper,onesided]{report}
+
+% Styrelizeren
+\usepackage{styrelizer}
+
+\begin{document}
+
+%\ifpdf
+%    \DeclareGraphicsExtensions{.pdf,.jpg,.png} %order is important
+%\else
+%    \DeclareGraphicsExtensions{.eps}
+%\fi
+
+
+% Turn on the alternative frontpage
+%\altFrontPage
+%\smallFrontPage
+\include{title}
+%\maketitle
+\newpage
+
+\renewcommand{\thepage}{\roman{page}}
+
+\chapter*{Abstract}
+\prepchapter
+\addcontentsline{toc}{chapter}{Abstract}
+\label{chapter:abstract}
+\input{sections/abstract}
+
+\newpage
+
+%\chapter*{Contents}
+%\prepchapter
+% The table of contents
+
+\tableofcontents
+\addcontentsline{toc}{chapter}{Contents}
+\listoffigures
+%\addcontentsline{toc}{chapter}{List of Figures}
+\listoftables
+%\addcontentsline{toc}{chapter}{List of Tables}
+\listof{elisting}{Code Listings}
+%\addcontentsline{toc}{chapter}{List of Code Listings}
+%\listof{example}{Examples}
+\newpage
+
+% Renew thepage command and start the document
+
+
+\chapter*{Acronyms}
+\addcontentsline{toc}{chapter}{Acronyms}
+\label{chapter:acronyms}
+\input{sections/acronyms}
+
+\newpage
+
+\renewcommand{\thepage}{\arabic{page}}
+\setcounter{page}{1}
+
+
+% The document:
+
+%\setcounter{figure}{10}
+%\setcounter{section}{1}
+
+%%%% The first section
+%\section*{Abstract}
+%\input{sections/abstract}
+
+%\setcounter{section}{1}
+\chapter{Introduction}
+\label{chapter:intro}
+\input{sections/introduction}
+
+\chapter{The Cell Broadband Engine}
+\prepchapter
+\label{chapter:cell}
+\input{sections/cell}
+
+\chapter{Python}
+\prepchapter
+\label{chapter:python}
+\input{sections/python}
+
+%\chapter{Basic Linear Algebra Subprograms}
+%\prepchapter
+%\label{chapter:blas}
+%\input{sections/blas}
+
+\chapter{Data Structures}
+\prepchapter
+\label{chapter:analysis}
+\input{sections/analysis}
+
+
+\chapter{SPU Programming}
+\prepchapter
+\label{chapter:dispatcher}
+\input{sections/dispatcher}
+
+
+\chapter{Porting Numpy}
+\prepchapter
+\label{chapter:numpy}
+\input{sections/numpy}
+
+%\chapter{FHB - conversion and integration with Numpy}
+%\prepchapter
+%\label{chapter:fhb}
+%\input{sections/fhb}
+
+
+\chapter{Implementation}
+\prepchapter
+\label{chapter:implementation}
+\input{sections/implementation}
+
+\chapter{Test Programs}
+\prepchapter
+\label{chapter:testprograms}
+\input{sections/tests}
+
+\chapter{Testing, Performance and Results}
+\prepchapter
+\label{chapter:performance}
+\input{sections/performance}
+
+%\chapter{Tools}
+%\prepchapter
+%\label{chapter:tools}
+%\input{sections/tools}
+
+
+\chapter{Conclusion}
+\prepchapter
+\label{chapter:conclusion}
+\input{sections/conclusion}
+
+\newpage
+% Bibliography
+\renewcommand{\thepage}{\arabic{page}} % % page numbers in arabic
+\addcontentsline{toc}{chapter}{References} % add the bibliography to contents
+%\bibliographystyle{apalike} % style of reference in text
+\bibliographystyle{abbrv}
+%\bibliographystyle{acm}
+\bibliography{mybib}
+
+\newpage
+\appendix
+\addcontentsline{toc}{chapter}{Appendix}
+\prepchapter
+%\startAppendix
+
+\input{appendix/appendix}
+
+
+
+\end{document}
+
+
+
+

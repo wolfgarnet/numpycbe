@@ -1,0 +1,572 @@
+This section will contain a description and an analysis of the
+\BLAS\ library. 
+
+The \BLAS\ library contains several linear algebra building blocks
+that can be used for more complex operations. This is the case with
+\LAPACK{}, which is a set of numerical linear algebra subroutines, that
+is used for solving commonly occuring problems.
+
+The \BLAS\ library contains three levels of linear algebra
+subroutines. The first level for \BLAS\ was proposed in 1973 by
+C. L. Lawson et al\cite{proposal_blas}. In 1985 J. J. Dongarra et al
+proposed an extended \BLAS\ as a second
+level\cite{proposal_extended_blas}. 
+
+Both level one and level two \BLAS\ are not very well suited for
+architectures with a hierarchy of memory and parallel computing. For
+those types of architectures, it is often preferable to partion the
+matrices into blocks and then compute matrix matrix operations on
+block level\cite{blas_level_3}. This strategy gives the opportunity to
+reuse the data while it is in memory and less movement of the data is
+done.
+
+\begin{enumerate}
+\item{Vector vector operations.}
+\item{Vector matrix operations.}
+\item{Matrix matrix operations.}
+\end{enumerate}
+
+In this chapter each of the levels will be discussed and analyzed in
+details to find any quirks and obstacles so that the implementation
+will be eased on the \CBE{}. Finally, a section describing how the
+best implementation strategy on the \CBE\ is presented. \\
+
+The \BLAS\ routines are build up of a name and a prefix. The prefix
+indicates which types of arguments and return values the routine uses
+and produces. An overview of the prefixes can be seen in
+table \ref{tbl:blaspre_overview}.
+
+\begin{table}
+\begin{tabular}{|l|l|c|p{8cm}|}
+\hline
+\bf{Type} & \bf{Precision} & \bf{Prefix} & \bf{Note} \\
+\hline
+\hline
+Real    & Single & S   & \\
+\hline
+Real    & Double & D   & \\
+\hline
+Real    & N/A    & SDS & Single precision input, calculated as double, returned as single.\\
+\hline
+Complex & Single & C   & \\
+\hline
+Complex & N/A    & SC  & Single precision complex as input, single precision real as output. \\
+\hline
+Complex & N/A    & CS  & Single precision complex scaled by single precision real. \\
+\hline
+Complex & Double & Z   & \\
+\hline
+Complex & N/A    & DZ  & Double precision complex as input, double precision real as output. \\
+\hline
+Complex & N/A    & ZD  & double precision complex scaled by double precision real. \\
+\hline
+\end{tabular}
+\caption{Overview of prefixes in BLAS routines.\label{tbl:blaspre_overview}}
+\end{table}
+
+Not all routines can be used with every prefixes, of course the
+conjugated dot product can only be used with complex numbers and
+likewise, the Givens rotations can only be aplied to real numbers.
+
+\section{Level 1 BLAS}
+
+The first level of \BLAS\ consists of vector operations and requiring
+$O(n)$ scalar operations, where $n$ is the size of the vector
+involved. The required level one routine proto types can be seen in
+listings \ref{lst:cblaslevelone}. (Move it to appendix???)
+
+\BLAS\ level one routines contains rotations, swap, scaling, copy,
+addition of a scaled vector, dot products, euclidean norms, sum and
+max. The more interesting of the routines will be analyzed to refine
+the implementation for the \CBE{}.
+
+\examplecodesmall{code/blaslevel1.c}{Level one BLAS}{lst:cblaslevelone}
+
+
+
+
+This level only operates on one or two vectors and can return only one
+vector or a single scalar. The complexity of level one routines is
+low, this can lead to an excessive use of the bandwith, thus this
+level is bandwith bound.
+
+A benefit of the simplicity of this level is, that there are no
+interdependencies between the vector elements and, as it will be seen
+with level three, the results have there own output. This should lead
+to an even simpler code with almost no logic for storing or getting
+data.
+
+Some of the routines are simplified to minimize the computational
+overhead, thus instead of computing the $L^2$-norm, as
+the \function{xNRM2} does, the less computational $L^1$-norm is used
+instead. The complex sum routines, \function{SCASUM}
+and \function{DZASUM} computes a modified $L^1$-norm,
+equation \ref{eq:sum_simp}, whereas the classical $L^1$-norm would be
+as in equation \ref{eq:sum_org}\cite{blas_for_fortran}.
+
+\begin{equation}
+w = \sum_{i=1}^n\{[Re(x_i)]^2 + [Im(x_i)]^2\}^{\frac{1}{2}}
+\label{eq:sum_org}
+\end{equation}
+
+\begin{equation}
+w = \sum_{i=1}^n\{|Re(x_i)| + |Im(x_i)|\}
+\label{eq:sum_simp}
+\end{equation}.
+
+Similarily, routines \function{ICAMAX} and \function{IZAMAX} are
+simplified to endorse a less expensive implementation of finding the
+index for the maximum element in a vector. See
+equation \ref{eq:max_org} for the classical version and
+equation \ref{eq:max_simp} for the simplified.
+
+\begin{equation}
+[Re(x_i)]^2 + [Im(x_i)]^2 = \max_{i=1}^n\{[Re(x_i)]^2 + [Im(x_i)]^2\}
+\label{eq:max_org}
+\end{equation}
+
+\begin{equation}
+[Re(x_i)] + [Im(x_i)] = \max_{i=1}^n\{|Re(x_i)| + |Im(x_i)|\}
+\label{eq:max_simp}
+\end{equation}
+
+The simpliefied versions of \function{SCASUM} and \function{DZASUM},
+denoted $||x||_{\tilde{i}}$, and the simpliefied versions
+of \function{ICAMAX} and \function{IZAMAX}, denoted
+$||x||_{\tilde{\infty}}$, are approximations of the classical norms
+$||x||_{i}$ and $||x||_{\infty}$. That is, $||x||_{i} \le
+||x||_{\tilde{i}} \le 2^{\frac{1}{2}}$ and $||x||_{\infty} \le
+||x||_{\tilde{\infty}} \le 2^{\frac{1}{2}}$.
+
+% Jeg skal lige finde ud af hvorfor det kan lade sig gøre!!!
+
+\subsection{The Dot Products}
+
+The \BLAS\ level one prescribes three types of dot products.
+
+\begin{itemize}
+\item{Regular dot product, for real numbers}
+\item{Conjugated dot product, for complex numbers}
+\item{Uncunjugated dot product, for complex numbers}
+\end{itemize}
+
+The regular dot product is only used for vectors of real numbers and
+is of the form
+
+\[v \cdot w = \sum_{i=1}^n = v_i w_i = v_1 w_1 + v_2 w_2 + \cdots + v_n w_n \].
+
+The conjugated dot product is only for complex numbers and is defined as
+
+\[v \cdot w = \sum_{i=1}^n = \overline{w_i} v_i \],
+
+where $\overline{w_i}$ is the complex conjugate. The complex conjugate
+of a complex number is defined as changing the sign of the imaginary
+part, thus $z = a + bi$ is $z = a - bi$. The unconjugated version
+retains the original sign of the imaginary part.
+
+The regular dot product can be called with single precision,
+calculated using double precision arithmetics and return a single
+precision result.
+
+Vectors can be thought of as $1 \times n$ matrices for row vectors and
+$m \times 1$ matrices for column vectors. Thus treating the dot
+product as a matrix multiplication. Therefore the standard notation
+$v \cdot w$ is inadequate, due to the nature of matrix
+multiplication. Either of the vectors must be transponed and thus
+giving following equation, $v^T w$ and $v^H w$ for the complex
+conjugate dot product.
+
+\subsection{Givens Rotations}
+
+\BLAS\ level one also prescribes two types of rotations, Givens
+rotations and modified Givens rotations, \function{xROTG}
+and \function{xROTMG} respectively. The two rotation routines
+calculates the elements of a Givens rotation matrix.
+
+The rotations can be used to zero out indivdual elements in a matrix
+or a vector, which can be adopted in other routines. Examples???
+
+A Givens rotation matrix is an identity matrix with for elements
+substituted. These four elements are $M_{ii} = c = cos(\theta)$,
+$M_{kk} = c = cos(\theta)$, $M_{ik} = s = sin(\theta)$ and $M_{ki} =
+-s$. The matrix looks like the following.
+
+\[\left[
+\begin{array}{ccccccc}
+1      & \cdots & 0      & \cdots & 0      & \cdots & 0 \\
+\vdots & \ddots & \vdots &        & \vdots &        & \vdots \\
+0      & \cdots & c      & \cdots & s      & \cdots & 0 \\
+\vdots &        & \vdots & \ddots & \vdots &        & \vdots \\
+0      & \cdots & -s     & \cdots & c      & \cdots & 0 \\
+\vdots &        & \vdots &        & \vdots & \ddots & \vdots \\
+0      & \cdots & 0      & \cdots & 0      & \cdots & 1 \\
+\end{array}
+\right]\]
+
+What the routines, \function{xROTG} and \function{xROTMG} does, is
+calculating the two variables, \variable{c} and \variable{s}.
+
+The routine \function{xROTG} takes four 
+
+% meget mere, men lige nu gider jeg ikke...
+
+\subsection{Findings/Conclusion}
+
+The routines of \BLAS\ level one are very atomic. That is, nearly
+every(must be checked) routine can be implemented using very little
+code. For large data sets, caution must be taken due to the number of
+calculation on each data element. That is, the transfer / workload
+ratio problem from section \ref{sec:transferworkload}.
+
+
+\begin{tabular*}{0.95\textwidth}{|l|l|l@{\extracolsep{\fill}}|}
+\hline
+\bf{Operation} & \bf{Supported precisions} & \bf{Comment} \\
+\hline
+ASUM & Single, double, single complex, double complex & \\
+\hline
+AXPY & Single, double, single complex, double complex & \\
+\hline
+COPY & Single, double, single complex, double complex & \\
+\hline
+DOT & Single, double\footnotemark & \\
+\hline
+DOTU & Single complex, double complex & \\
+\hline
+DOTC & Single complex, double complex & \\
+\hline
+NRM2 & Single, double, single complex, double complex\footnotemark & \\
+\hline
+ROTG & Single, double & \\
+\hline
+ROTM & Single, double & \\
+\hline
+ROTMG & Single, double & \\
+\hline
+SCAL & Single, double, single complex, double complex\footnotemark & \\
+\hline
+SWAP & Single, double, single complex, double complex & \\
+\hline
+\end{tabular*}
+
+\addtocounter{footnote}{-3}
+\stepcounter{footnote}\footnotetext{Complex vectors can be scaled with floating points of the same precision.}
+\stepcounter{footnote}\footnotetext{Complex vectors will return floating points of the same precision.}
+\stepcounter{footnote}\footnotetext{Single precision can be calculated with double precision and can be returned with either single or double precision.}
+
+\section{Level 2 BLAS}
+
+The first level of \BLAS\ consists of matrix vector operations and
+requiring $O(m n)$ scalar operations, where $m$ and $n$ are the
+dimensions of the matrix involved. The level two routines could be
+implemented by a series of calls to level one \BLAS\ routines. It is
+not recommended though, because the level two \BLAS\ is performing
+basic operations at one level higher than level
+one \BLAS{}\cite{extended_blas_for_fortran}.
+
+
+The required level two routine proto types can be seen in
+listings \ref{lst:cblasleveltwo}.
+
+\examplecodesmall{code/blaslevel2.c}{Level two BLAS}{lst:cblasleveltwo}
+
+\subsection{Matrix Vector Products}
+
+The level two \BLAS\ specifies N matrix vector products. One for a
+general matrix, where the matrix operated on is either the normal
+matrix, its transpose or its conjugate transpose(for complex
+matrices).
+
+That is,
+
+\[
+y \gets \alpha A x + \beta y, \quad
+y \gets \alpha A^T x + \beta y \quad \textrm{and}  \quad
+y \gets \alpha \overline{A^T} x + \beta y 
+\]
+
+respectively.
+
+\subsubsection{Band Matrices}
+
+One for band matrices of the form
+
+\[\left[
+\begin{array}{ccccccc}
+M_{11}  & M_{12} & 0      & \cdots & 0         & \cdots    & 0 \\
+M_{21}  & M_{22} & M_{23}  & \ddots  &         &           & \vdots \\
+0      & M_{32}  & M_{33} & \ddots &           &           & 0 \\
+\vdots &        & \ddots & \ddots & \ddots    &           & \vdots \\
+0      &        &        & \ddots & M_{m-2n-2} & M_{m-2n-1} & 0 \\
+\vdots &        &        &        & M_{m-1n-2} & M_{m-1n-1} & M_{m-1n} \\
+0      & \cdots & 0      & \cdots & 0         & M_{mn-1}   & M_{mn} \\
+\end{array}
+\right]\]
+
+where the super diagonal, $KU$, and sub diagonal, $KL$ is 1. In this
+case the matrix is a swuare matrix, it doesn't have to be. The super
+and sub diagonal refers to the width of the diagonal band, the upper
+and lower part of the matrix respectively, where the non zero elements
+of the matrix are confined. The width of the band is $KU + KL +
+1$. Generally, the zero components of the matrix can be written as in
+equation \ref{eq:bandmatrix}.
+
+\begin{equation}
+m_{ij} = \left\{
+\begin{array}{rl}
+0 & \mathbf{if} \quad j < i - KL \\
+0 & \mathbf{if} \quad j > i + KU \\
+\end{array} \right.
+\label{eq:bandmatrix}
+\end{equation}
+
+A diagonal matrix is a matrix with $KU + KL = 1$.
+
+As for the general matrix, the band matrix can also be operated as a
+normal matrix, transposed matrix and a conjugated transposed matrix.
+
+\subsubsection{Hermitian Matrices}
+
+A hermitian matrix is a square matrix, $M = m_{ij}$, where $M = M^H$
+and $M^H$ is the transposed matrix conjugate, or
+$\overline{M}^T$. This is equivalent to $m_{ij}
+= \overline{m_{ji}}$. As a result of this, the diagonal of the matrix
+are real numbers and the other numbers may be complex. In \BLAS\ only
+complex numbers are allowed, due the homogeneous nature of the library
+and therefore, the diagonal numbers are complex with there imaginary
+part as zero.
+
+The following two matrices are both hermitian, $\mathbf{NH}$ is normal
+hermitian matrix and $\mathbf{BH}$ is a \BLAS\ specific hermitian
+matrix. As a consequence of this, the \BLAS\ hermitian matrix can be
+stored as a symmetric matrix in either the upper or lower triangle,
+because the opposite triangle is its complex conjugate.
+
+\[
+\mathbf{NH} = \left[
+\begin{array}{ccc}
+1       & -2 + 3i & 2  \\
+-2 - 3i & 32      & i  \\
+2       & -i      & -1 \\
+\end{array}
+\right]
+\qquad
+\mathbf{BH} = \left[
+\begin{array}{ccc}
+1 + 0i  & -2 + 3i & 2 + 0i      \\
+-2 - 3i & 32 + 0i & i       \\
+2 + 0i       & -i      & -1 + 0i \\
+\end{array}
+\right]
+\]
+
+The hermitian matrices can also have the band feature as the general
+matrices have. This only requires a symmetric bandwidth of $K$, for
+which the values are held. Everything else is zero, $z = 0 + 0i$.
+
+\subsubsection{Symmetric Matrices}
+
+Symmetric matrices have almost the same property as a hermitian
+matrix. Though the symmetric matrices only operates on real numbers,
+the transposed conjugate makes no sense and only
+
+\[A = A^T\]
+
+is required. Symmetric matrices can also be symmetrically banded. 
+
+
+\subsubsection{Triangular Matrices}
+
+A triangular matrix is a square matrix, where either the triangle
+above or below the main diagonal is zeroed, as shown 
+
+\[
+\mathbf{UM} = \left[
+\begin{array}{ccccc}
+M_{11}  & M_{12} & M_{13} &  \cdots  & M_{1m} \\
+0       & M_{22} & M_{23}  & \cdots  & M_{2m} \\
+\vdots  &        & \ddots &  \ddots &  \vdots \\
+\vdots  &        &        &  M_{m-1m-1} & M_{m-1m} \\
+0       & \cdots & \cdots  & 0      &  M_{mm} \\
+\end{array}
+\right]
+\qquad
+\mathbf{LM} = \left[
+\begin{array}{ccccc}
+M_{11}  & 0     & \cdots &   \cdots  & 0 \\
+M_{21}  & M_{22} &        &          &\vdots \\
+M_{31}  & M_{32} & \ddots &          &  \vdots \\
+\vdots & \vdots & \ddots &  M_{m-1m-1} & 0 \\
+M_{m1}  & M_{m2} & \cdots  & M_{mm-1} &  M_{mm} \\
+\end{array}
+\right]
+\]
+
+where $\mathbf{UM}$ is an upper triangular matrix and $\mathbf{LM}$ is
+a lower triangular matrix. The triangular matrix can either be unit or
+not, that is, whether the main diagonal of the matrix is ones.
+
+As for general matrices the triangular matrix can also be computed as
+its own transposed and, for complex triangular matrices, its own
+transposed conjugate.
+
+The triangular matrix can also be banded with $k+1$ diagonals.
+
+\subsubsection{Packed Matrices}
+
+Symmetrically matrices, both symmetric and hermitian, and triangular
+matrices can be packed. That is, the data can be stored in less space
+than in a regular matrix. Because both the upper or lower triangle
+part of the matrix, store the same numbers(or, in the hermitian case,
+its complex conjugate).
+
+Using packed matrices saves space, but to access the elements more
+advanced logic is required. This logic can be complex and the trade
+off is not always beneficial.
+
+\subsection{Triangular Equation Solvers}
+
+Solving a matrix equations of the form $\mathbf{M} x = y$, the matrix
+equation can be written as a system of linear equations
+
+\[
+\left[
+\begin{array}{ccccccccc}
+M_{11} x_{1} & + & M_{21} x_{2}  & + & \cdots  & + & M_{1n} x_{1} & = & y_{1}\\
+M_{21} x_{1} & + & M_{22} x_{2}  & + & \cdots  & + & M_{2n} x_{2} & = & y_{2}\\
+\vdots      &   & \vdots       &   &         &   & \vdots      &   & \vdots\\
+M_{m1} x_{1} & + & M_{m2} x_{2}  & + & \cdots  & + & M_{mn} x_{n} &  = & y_{m}\\
+\end{array}
+\right]
+\]
+
+where $\mathbf{M}$ is a general matrix, $x$ is the unknown and $y$ the
+result vector, the procedure can be very complex. On the other hand,
+if the matrix is a triangular matrix, solving the equation is
+easy. Using a process called ``forward substitution'' for lower
+triangular matrices or using a process called ``back substitution''
+for upper triangular matrices, the solution is easily found. The
+process is iterative. The first equation, with only one unknown, is
+solved, $M_{11} x_1 = y_1$, for lower triangular matrices. The result
+is then substituted forward to the next equation, thus leaving only
+one unknown. The system of linear equations for a lower triangular
+matrix is as shown
+
+\[
+\left[
+\begin{array}{ccccccccc}
+M_{11} x_{1} &   &        & &        & & &  = & y_{1}\\
+M_{21} x_{1} & + & M_{22} x_{2}  & &        & & &  = & y_{2}\\
+\vdots &   & \vdots & & \ddots & & &    & \vdots\\
+M_{m1} x_{1} & + & M_{m2} x_{2}  & + & \cdots & + & M_{mn} x_{n} &  = & y_{m}\\
+\end{array}
+\right]
+\]
+
+The process of back substitution is analogous, just performing the
+steps backwards.
+
+\subsection{Matrix Rank Updates}
+
+Rank one updates for a general matrix looks like
+
+\[
+\mathbf{M} = \alpha x y^T + \mathbf{M}
+\]
+
+where $\mathbf{M}$ is an $m \times n$ matrix of either real numbers or
+complex numbers. $x$ is an $m$ element vector and $y$ is an $n$
+element vector, both are of the same type as $\mathbf{M}$. $\alpha$ is
+a scalar and is also of the same type as $\mathbf{M}$.
+
+The conjugate of $y$ can also be used, thus only complex numbers can
+be used
+
+\[
+\mathbf{M} = \alpha x y^H + \mathbf{M}
+\]
+
+Rank one updates can also be applied to hermitian matrices, packed and
+not packed. The equation looks like
+
+\[
+\mathbf{H} = \alpha x x^H + \mathbf{H}
+\]
+
+where $\mathbf{H}$ is a hermitian $n \times n$ matrix, $\alpha$ is a
+complex scalar and $x$ is a complex $n$ element vector. For hermitian
+matrices, rank two updates are possible as well. They are of the form
+
+\[
+\mathbf{H} = \alpha x y^H + \overline{\alpha} y x^H + \mathbf{H}
+\]
+
+\noindent 
+Analogous to hermitian matrices, symmetric matrices can also be
+applied with both rank one and rank two updates. (Mere om de symmetriske???)
+
+\subsection{Findings/Conclusion}
+
+As it was seen with level one routines, level two also ``suffers''
+from simplicity.
+
+\section{Level 3 BLAS}
+
+The third level of \BLAS\ is matrix matrix operations of the order
+$O(n^3)$.
+
+\subsection{Matrix Multiplication}
+
+The general matrix multiplication in \BLAS\ level three is of the form
+
+\[
+\mathbf{C} \gets \alpha \mathbf{A} \mathbf{B} + \beta \mathbf{C}
+\]
+
+So, actually it is a matrix matrix multiply and add operation. The
+general matrix multiplication can be used with both real numbers and
+complex numbers, transposed and the conjugate transposed. The
+following table shows the types of matrix multiplication
+
+\begin{tabular}{|c|ccc|}
+\hline
+            & \bf{Normal A} & \bf{Transposed A} & \bf{Conj. transposed A} \\
+\hline
+\bf{Normal B} & $\mathbf{C} \gets \alpha \mathbf{A} \mathbf{B} + \beta \mathbf{C}$  
+              & $\mathbf{C} \gets \alpha \mathbf{A}^T \mathbf{B} + \beta \mathbf{C}$ 
+              & $\mathbf{C} \gets \alpha \mathbf{A}^H \mathbf{B} + \beta \mathbf{C}$\\
+              & A is $m \times k$, B is $k \times n$                                
+              & A is $k \times m$, B is $k \times n$                                 
+              & A is $k \times m$, B is $k \times n$ \\
+
+\hline
+\bf{Transposed B} & $\mathbf{C} \gets \alpha \mathbf{A} \mathbf{B} + \beta \mathbf{C}$  
+                  & $\mathbf{C} \gets \alpha \mathbf{A}^T \mathbf{B}^T + \beta \mathbf{C}$ 
+                  & $\mathbf{C} \gets \alpha \mathbf{A}^H \mathbf{B}^H + \beta \mathbf{C}$\\
+                  & A is $m \times k$, B is $k \times n$                                
+                  & A is $k \times m$, B is $n \times k$                                 
+                  & A is $k \times m$, B is $n \times k$ \\
+
+\hline
+\bf{Conj. transposed B} & $\mathbf{C} \gets \alpha \mathbf{A} \mathbf{B}^H + \beta \mathbf{C}$  
+                        & $\mathbf{C} \gets \alpha \mathbf{A}^T \mathbf{B}^H + \beta \mathbf{C}$ 
+                        & $\mathbf{C} \gets \alpha \mathbf{A}^H \mathbf{B}^H + \beta \mathbf{C}$\\
+                        & A is $m \times k$, B is $n \times k$                                
+                        & A is $k \times m$, B is $n \times k$                                 
+                        & A is $k \times m$, B is $n \times k$ \\
+
+\hline
+\end{tabular}
+
+where $\mathbf{C}$ is always $m \times n$.
+
+\section{BLAS on the CELL BE}
+
+When implementing \BLAS\ on the \CBE{}, some care must be taken. First
+of all the data must be transferred to the \CBE{}. What is the optimal
+data structure and how is it best organized relative to the \DMA\
+transfers. Some of the routines alters the data, so there are
+interdependencies among the data.
+
+Level one and two \BLAS\ is best suited with a contiguous memory
+layout, where level three is best suited with blocks of data.

@@ -1,0 +1,27 @@
+set terminal postscript eps color
+set key inside left top vertical Right box
+set output "strsm_llnu.eps"
+
+#set terminal svg
+#set key inside left top vertical Right box
+#set output "strsm_llnu_4096.svg"
+
+set bar 1.0
+set boxwidth 1.9 absolute
+set style fill   solid 1.00 border -1
+set style rectangle back fc lt -3 fillstyle  solid 1.00 border -1
+
+set style data histograms
+
+set style histogram clustered gap 3 title  offset character 0, 0, 0
+
+set title "STRSM left lower non-transposed unit"
+set xlabel "Problem Size"
+set ylabel "Seconds"
+
+set size 1, 0.6
+
+set yrange [ 0.00000 : 31. ] noreverse nowriteback
+
+
+plot "strsm_llnu.dat" using 2:xtic(1) title "NumPyCBE", '' u 3 title "IBM BLAS", '' u 4 title "PPE ATLAS", '' u 5 title "Quad Core ATLAS", '' u 6 title "Dual Core ATLAS"

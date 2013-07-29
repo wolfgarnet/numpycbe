@@ -1,0 +1,1 @@
+/home/jens/python/Python-2.5.2/./python /home/jens/python/numpy-1.2.1/setup.py install --prefix=/home/jens/bin/numpy > install_details.txt 

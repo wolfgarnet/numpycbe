@@ -1,0 +1,1 @@
+@TYPE@_@kind@(char **args, intp *dimensions, intp *steps, void *func)

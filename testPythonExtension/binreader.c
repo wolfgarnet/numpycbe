@@ -1,0 +1,53 @@
+/*
+ * binreader.c
+ *
+ *  Created on: Jan 27, 2009
+ *      Author: wolle
+ */
+
+#include <stdio.h>
+#include <malloc.h>
+
+unsigned int binreader( char *binfile, unsigned int **bin )
+{
+	FILE *fp;
+
+	fp = fopen( binfile, "r" );
+
+	if( fp == NULL )
+	{
+		printf( "Unable to open %s\n", binfile );
+		return NULL;
+	}
+
+    fseek( fp, 0, SEEK_END );
+
+    unsigned int size = ftell( fp );
+
+    printf("size a is: %d\n",size);
+    unsigned int subThis = size % 16;
+    printf("3subThis is: %d\n",subThis);
+    size += (16 - subThis);//JMI:added
+    //size /= 4;//JMI:removed
+
+    printf("size b is: %d\n",size);
+
+    rewind( fp );
+
+    // Reserve space
+    *bin = (unsigned int*)memalign( 7, size );//jmi:removed '* sizeof(unsigned int)' and changed 128 to 7.
+	// Begin reading:
+    unsigned int i, temp;
+    for ( i = 0 ; i < size ; i++ )
+    {
+    	fread( &temp, sizeof( unsigned int ), 1, fp );
+    	bin[0][i] = temp;
+    	//printf( "%d\n", temp );
+    }
+
+    fclose( fp );
+
+    printf( "Done reading file %s\n", binfile );
+
+    return size;
+}

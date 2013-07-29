@@ -1,0 +1,403 @@
+The \CBE\ is build in collaboration with Sony, Toshiba and IBM, also
+known as STI. The \CBE\ has been developed to overcome some of the
+obstacles met in recent architecture development.
+
+The most important obstacle is the Memory Wall\cite{memwall94}. This
+obstacle have emerged by having fast increasing CPU frequencies,
+whereas the speed of DRAM have not improved as fast. This caused the
+memory to become a bottleneck.
+
+Another problem is increasing CPU frequencies. While raising the
+frequencies, the more power is needed.
+
+These two critical problems are tried solved with the \CBE{}. The
+\CBE\ consists of nine processor elements, each running at 3.2
+GHZ. Instead of having a single processor running at high frequency
+and thus retaining the above mentioned problems, the processor is
+divided into several processors or cores, running at a lower
+frequency.
+
+The memory wall problem is tried solved with overlapping asynchronous
+data transfers on a fast bus.\\
+
+In the following sections the \CBE\ architecture is examined. We will
+try to analyze it, gaining knowledge of how to develop efficient \CBE\
+programs, by studying the manuals and guides, trying different
+techniques and general experimentations with the \CBE{}.
+
+\section{Architecture}
+\label{sec:cbe}
+
+The \CBE\ is a heterogeneous single chip multiprocessor and consists
+of nine processors. One \PPE\ and eight \SPEv{'s}. The nine processing
+elements, the on chip memory and the I/O controllers are all connected
+through the \EIB{}. The \EIB\ supports full memory coherent and
+symmetric multiprocessor operations, it consists of four 16 bytes wide
+rings. A schematically representation of the \CBE\ architecture can be
+seen in figure \ref{fig:cbe}.
+
+The \SPE{}'s can receive and send data from and to the main storage
+and between other \SPE{}s with \DMA\ transfers. The \SPE{}'s \LS\ are
+linked to the \EIB\ with their \MFC{}. This can be thought of as a three
+level
+\SPE\ memory structure: main storage, \LS\ and large register
+files. The \DMA\ transfers are asynchronous, thus enabling the
+programmer to schedule data and code transfers to overcome memory
+latencies. Each \SPE\ can issue 16 ongoing \DMA\ transfers, which sums
+up to 128 transfers in total for 8 SPE's. Privileged software can use
+the
+\RAM\ to regulate the rate at which resource requesters can use the
+memory and I/O resources.
+
+The on chip \MIC\ provides an interface between the \EIB{} and the
+physical memory. The physical memory is supported by two Rambus memory
+interfaces. These two interfaces supports up to 64GB DRAM.
+
+The on chip \BEI\ provides an interface to the I/O. The \BEI\ includes
+a \BIC{}, an \IIC\ and an \IOC{}. \BEI\ manages the transfers between
+the \EIB\ and the I/O devices and provides I/O address translation and
+command processing.
+
+
+The \EIB\ data network consists of four 16 byte rings. The two of the
+four rings rotates clockwise and the last two rotates counter clock
+wise. Each ring can potentially have three concurrent data transfers
+at a time, as long they do not overlap. This gives faster
+communication between neighbors connected to the \EIB{}. Requests for
+data transfers must be done through the data arbiter. This element
+decides which ring a given request should go through. The data arbiter
+schedules data transfers so the shortest path is taken on a ring,
+avoids interference with other transfers and, with round robin, makes
+sure each element gets its turn\cite{ibm_cell_network}. See
+figure \ref{fig:arbiter} for the \EIB\ network. \\
+
+Multiple Cell processors can be connected through
+the \function{IOIf\_0} interface using the \BIF\ protocol.
+
+\figscale{figures/cbev2.pdf}{Overview of the Cell Broadband Engine}{fig:cbe}{0.6}
+
+\figscale{figures/arbiter.pdf}{The data arbiter}{fig:arbiter}{0.6}
+
+
+\subsection{Power Processor Element}
+\label{sec:ppe}
+
+The \PPE\ is the main processor, which is a traditional Power PC. The
+\PPU\ supports the vector/SIMD multimedia extensions. It is 
+able to run operating systems and is optimized to conduct fast
+threading. It has a RISC based architecture, running two hardware
+threads. Though running at 3.2 GHZ, empirical studies shows, that it
+in practice performs much slower.
+
+The \PPE\ has 32KB of level one cache and 512KB of level two cache. A
+standard PlayStation 3 is delivered with 256MB ram, but can be
+upgraded to 64GB.
+
+It is designed to run the operating system and manage the
+\SPE\ threads and resources. 
+
+For effective utilization of the \SPE{}'s, a small amount of
+communication with the \PPE\ should be done. Every unnecessary \PPE\
+contact, can be expensive. The data needed by the \SPE{}'s should be
+transferred as an act by the \SPE{}'s, not the \PPE{}.
+
+\subsection{Synergistic Processor Element}
+
+The \SPE\ is optimized for running compute intensive
+\SIMD\ applications and is not optimized for running operating
+systems. Each \SPE\ consists of a \SPU\ and an \MFC{}.
+
+Each \SPE\ has a 256KB large private local memory called Local
+Storage. Furthermore, each \SPE\ has 2KB large register file, where
+each of the 128 registers are 128 bit wide and can contain all data
+types. Each register can contain eight half words, four words or two
+double words. Figure \ref{fig:spe} represents the \SPE\ and its parts.
+
+The \SPU\ is optimized for single precision floating point operations,
+but recently STI released an improved double precision version of the
+\CBE{}, which has a fully optimized double precision pipeline. As stated in the introduction, the thesis will only deal
+with first version, since our work is done on a PlayStation 3.
+
+\figscale{figures/spe.pdf}{Overview of the Synergistic Processing Element}{fig:spe}{0.6}
+
+\figscale{figures/spu_functional_unitsv2.pdf}{Overview of the Synergistic Processing Unit}{fig:spu}{0.6}
+
+\subsubsection{Communication}
+
+The \SPE{}'s can access the main storage with \MFC\ commands to
+transfer data and instructions to and from its own \LS{}. Every
+\SPE\ can issue 16 \DMA\ transfers through its \MFC\ using a FIFO
+queue, this is 128 in total. The transfers can also be issued by the
+\PPE, but it can issue fewer at a time.
+
+The \SPE{}'s control their \DMA\ transfers and communication with
+channels. These channels are bidirectional message passing interfaces
+and are managed by the \SPE{}'s \MFC{}. The \PPE\ and the
+other \SPE{}'s can access the given \SPE{}'s \MFC\ through
+the \MFC{}'s \MMIO\ registers and queues, which are visible to
+software in the main storage address space.
+
+The \SPE\ also contains a number of mailboxes each of four
+bytes. These mailboxes offers convenient and simple communication with
+the \PPE\ and other \SPE{}'s. Each \SPE\ has four ingoing mailboxes,
+where other elements can write data to. One mailbox the \SPE\ itself
+can write data for other elements to read and another outbound
+mailbox, can be programmed to cause an interrupt to the receiver of
+the mail.
+
+Each of the mailboxes are blocking, meaning that if the mailbox is
+full, the call will block the sender of the mail until a spot is free
+or block the receiver until mail is
+present\cite{cellhandbook}. Conveniently, the elements of the \EIB\
+can check the status of a mailbox prior to sending, thus being able to
+do other work while waiting.
+
+\subsubsection{Dual Issue}
+
+Figure \ref{fig:spu} depicts the \SPU{}. As it can be seen, it has two
+pipelines. An even and an odd. Well structured code can benefit from
+the two pipelines at once. For example, the floating point unit is on
+the even pipeline and the channel and DMA unit is on the odd pipeline.
+Grouping one of each instruction, the \SPU\ can execute them both in
+one clock cycle.
+
+\subsubsection{SPU Floating Points}
+\label{sec:spufloat}
+
+Contrary to the \PPE\ and other contemporary architectures, the \SPU\
+implements a different floating point unit, rather than IEEE
+754\cite{cellhandbook}. The format is like IEEE 754, but single
+precision results depart from it. It emphasizes on real time graphics
+requirements and extends the range beyond the standards of IEEE. It
+only rounds towards zero and denormals are treated as
+zero. Furthermore, NaNs\footnote{Not a number} and infinity are not
+represented.
+
+\subsection{CESOF}
+\label{sec:cesof}
+
+During development of a \CBE\ application, the programmer uses two
+different tool chains. One for the \PPE\ side and one for the \SPE\
+side. Since these two tool chains are independent and thus used
+separately, no possibility of specifying inter architectural symbols
+between them.
+
+With \CESOF\ the programmer is able to make inter architectural
+interactions between the \PPU\ and the \SPE{}'s. It allows \PPE\
+associated symbols to be referenced in \SPE\ context
+through \EAR{}'s. Prefixing the \SPE\ symbol with \variable{\_EAR\_},
+gives an \EA\ of an object residing on the \PPE{}. It is worth noting,
+that the \EAR\ symbol does not contain the actual object, but only a
+reference and thus transfering the actual object through \DMA\
+instructions is still required\cite{ibm_ABI}.
+
+\CESOF\ also allows embedded \SPE\ applications in a \PPU\
+application. As mentioned before, this allows the programmer to ease
+the development of inter architectural dependent applications,
+where \SPE{}'s references \PPU\ symbols.
+
+\subsection{Intrinsics}
+\label{sec:intrinsics}
+
+For easy control, IBM has developed a rich set of C/C++ extension, in
+the form of function calls, that maps one or more assembly
+instruction. This gives the opportunity for the programmer, to avoid
+assembler programming for the most typical instructions used.
+
+\section{Performance}
+\label{sec:cellperformance}
+
+In this section the performance of the \CBE\ will be analyzed. Given
+the specifications of the \CBE{}, we will analyze what performance can
+be expected when developing scientific applications. The two primary
+performance measurements are bandwidth, measured in Gigabytes
+transferred per second, GB/s, and the floating point performance,
+measured in GFLOPS\footnote{$10^9$ floating point operations per
+second.} or GigaFLOPS.\\
+
+Each participant on the \EIB\ can send and receive 16 bytes per \EIB\
+clock cycle. The \EIB\ clock cycle is half the \PPE{}'s, thus being
+1.6GHZ. This gives a theoretical peak bandwidth of 25.6 GB/s per
+element connected to the \EIB{}. In total, there is 12 elements
+connected, nine processing elements, the \MIC\ and two I/O
+elements. The \EIB\ can transfer 128 bytes per clock cycle. The
+theoretical peak bandwidth performance of the \EIB\ is thus 204.8
+GB/s, given that a bus cycle is 1.6 GHZ, given by $1.6 \cdot 128 B =
+204.8$ GB/s\cite{ibm_cell_network}.
+
+Since the \MIC\ only have one connection to the \EIB{}, \DMA\
+transfers from or to the main memory is bounded at 25.6 GB/s. So,
+bandwidth intensive application using data from main memory, will
+clearly experience the \MIC\ as a bottleneck.
+
+
+
+Running at 3.2 GHZ each \SPE\ can achieve a theoretical peak
+performance of 25.6 GFLOPS, using single precision floating
+points. This is done using a vector fused multiply and add
+instruction. This is also true for the \PPE{}. Moreover, using single
+vector instructions, the \SPE\ can achieve 12.8 GFLOPS.
+
+For double precision, the \CBE\ can achieve a peak performance of 14.6
+GFLOPS. The new fully pipelined double precision version of
+the \CBE{}, can reach a peak performance of 102.4 GFLOPS using double
+precision numbers\cite{ibm_powerxcell8i}.
+
+
+\section{Cell BE Considerations}
+\label{sec:considerations}
+
+In the previous sections we have analyzed the \CBE\ and a lot of
+information was retrieved. This information can give some ideas how to
+develop applications to the
+\CBE{}. We will try to sum up some of the more crucial considerations
+needed to make applications for the \CBE{}, not only scientific
+applications, but in general.
+
+\subsection{SIMDization}
+\label{sec:simdization}
+
+As mentioned above, each \SPE\ can achieve great performance when
+utilizing \SIMD\ instructions. This requires the data, the
+\SIMD\ instruction uses, to be 16 byte aligned, so it will fit into a
+register. The data must also be vectorized, meaning that having a
+sequence of data, it must be type cast to a vector of the given
+type. I. e. for floating points, the sequence must be cast to vector
+float pointer. So, by making sure the working data is always 16 byte aligned
+and is grouped in fours(for single precision), \SIMD\ instructions can
+be used at any time, thus having the potential of computing four
+operations in one clock cycle.\\
+
+Not all data is 16 byte aligned and not all data can be grouped in
+fours or twos(depending on the data type in use). To remedy this, the
+\SPU\ can permute data, so the layout obey the vectorization rules, but at the cost of extra clock cycles.
+
+Another way to get around the rules, is to pad the data with extra
+zeros. This makes it simple to make sure that there are a multiple of
+16 bytes of data. By always 16 byte align the data needed for
+computation, it is easy to obey the rules.
+
+\subsection{Double Buffering}
+\label{sec:doublebuffering}
+
+Double buffering, or multi buffering, is a technique, where the data
+latencies are hidden through asynchronous
+\DMA\ transfers. Essentially, with double buffering(but can easily be
+applied to multi buffering), it initially requires to activate two
+\DMA\ transfers. When the first transfer is done, it can be worked on
+while waiting for the second to complete. When work is done on the
+first, a third \DMA\ transfer can be activated. When the second is
+done, it can be worked on. Subsequent data can be transferred using the
+same pattern.
+
+The pattern can be algorithmically be set up as following.
+
+\begin{enumerate}
+\item{Request a \DMA\ transfer to buffer A from main storage}
+\item{Request a \DMA\ transfer to buffer B from main storage}
+\item{Wait for buffer A to complete}
+\item{Use data from buffer A}
+\item{Request a \DMA\ transfer to buffer A from main storage}
+\item{Wait for buffer B to complete}
+\item{Use data from buffer B}
+\item{Repeat steps 2-7 if necessary}
+\item{Use data from buffer A}
+\end{enumerate}
+
+\subsection{Transfer / Workload Ratio}
+\label{sec:transferworkload}
+
+Ideally, each \SPE\ must have enough data to work with. This can be
+achieved by keeping the \LS\ updated with data needed for computation
+and making sure, that data used is either returned to the main program
+on the \PPE\ or overwritten by new data.
+
+To efficiently harness the computational powers of the \SPU{}, the
+application must have data ready in the \LS\ when needed. This is done
+by ensuring the matching \DMA\ transfers are finished when
+needed. Also, when working on data already in the \LS{}, asynchronous
+\DMA\ transfers should be issued for having data ready afterwards.
+
+This situation defines the transfer / workload ratio. If the application
+finishes work with the data too fast, the \SPE\ just waits for the
+next transfer to finish, hence much computational power is wasted. Or,
+the opposite, if the \SPE\ takes too long to finish working with the
+data, the bandwidth of the \EIB\ is wasted. Though the latter is not
+really a problem, it is always wise to keep the \EIB\ busy and have
+data ready at all times.
+
+\subsection{Data Alignment}
+\label{sec:dataalignment}
+
+The documentation of the \CBE\ specifies, that data needed to be
+\DMA\ transferred, must be 16 byte aligned. For larger transfers, more
+than a few kilobytes, or data that needs frequent transfers, it can be
+wise to 128 byte align the data. The 128 byte alignment is the natural
+alignment for the \EIB{}, since it transfers 128 bytes at a time. A
+\DMA\ transfer will always transfer 128 bytes, so by making sure, that
+the data to be transferred is 128 byte aligned and its actual size is a
+multiple of 128 bytes, it provides the optimum bandwidth utilization.
+
+\subsection{Branching}
+\label{sec:branching}
+
+When a program needs to branch, the \SPE\ hardware expects a
+sequential flow, meaning the branch is not taken by default. If the
+branch should have been taken, a penalty of 18 to 19 clock cycles
+occurs. Two ways to reduce or completely remove branch mispredictions
+are to: either include Branch Hints or remove them completely.
+
+Branch Hints are statements, that tells the compiler which branch it
+should take and must be given 11 cycles before the actual branch. Thus
+the programmer must know something about the instructions involving
+the given branch.
+
+Removing the branches completely requires a little more effort and a
+little more space, but can achieve very good performance. 
+
+If a branch cannot be totally eliminated, it is efficient to try to
+bypass the branch as often as possible. That is, arrange the branch so
+it will be taken with the lowest probability. This requires the
+programmer to know something about the flow in the program, which he
+almost certainly does.
+
+\subsubsection{Loop Unrolling and Function Inlining}
+\label{sec:loopunrolling}
+
+Loop unrolling is a technique where the number of loop iterations is
+decreased. This ensures that the number of branches is decreased
+too. A loop can be completely unrolled if the number of iterations is
+known. This removes all branches concerning the given loop. Branches
+in loops are not the most expensive type, since they are very
+predictable. If a loop has $n$ iterations, only $1$ branch is
+mispredicted.
+
+Function inlining eliminates the two branches associated with function
+call linkage. Massive loop unrolling and function inlining can result
+in larger code sizes and this can be harder to manage on the
+relatively small \LS\, so these forms of optimizations should be used
+with care.
+
+%REGISTER SPILLING!!!
+
+Register spilling can occur if massive loop unrolling or function
+inlining is done, because there will, at a point, exist more live
+variables than registers and thus the compiler has to spill some of
+the live variables to the memory. This should be avoided at all cost,
+since the instruction count in a loop, can increase dramatically.
+
+
+%\section{Cell Blade Center vs PlayStation 3}
+%
+%As stated, the key difference between a \PS\ and a Cell processor is,
+%that the \PS\ only have six \SPE{}'s available for developers and one
+%reserved for the operating system. In an IBM Cell Blade Center, two
+%Cell processors are connected. This means, 16 \SPE{}'s and
+%two \PPE{}'s.
+%
+%When developing for a Blade Center, even more options becomes
+%available. Not only can the program be distributed to 16 \SPE{}'s,
+%two \PPE{}'s are present, which offers a new wave of opportunities of
+%how to distribute the program, orchestrate the data and inter-element
+%communication.
+

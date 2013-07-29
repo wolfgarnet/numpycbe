@@ -1,0 +1,1 @@
+SliceObject *slice_info;

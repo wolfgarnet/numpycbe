@@ -1,0 +1,508 @@
+When building a complex program, such as NumPy, the program code can
+usually not reside in the \LS\ of a \SPE{} in it's entirety. A key
+observation is that, though the complete program is made up of several
+functions, and presumably thus several megabytes of code, the
+computational-intensive parts of each function only constitutes a
+fraction of the complete program. These fractions can be split up
+into \SPE\ programs that fit into the \SPE{}'s \LS{}.
+
+In this chapter we will discuss and analyze the possibilities of how
+to split up code, so it can be operational on
+the \SPE{}'s.
+
+\section{Uploading Programs to an SPE}
+
+The naive and trivial way of uploading multiple \SPE\ programs, is to
+develop them as separate \SPE\ programs and embed them into the \PPE\
+program. In this way a new thread, for each \SPE{}, must be
+created on the \PPE\ each time a new functionality is required. The \PPE\ thread
+calling \function{spe\_context\_run()} is blocked until the \SPE\
+program is terminated, either by failing or returning successfully.
+
+This solution requires a lot of time creating and terminating
+threads. Also, a full \SPE\ program must be transferred to each of
+the \SPE{}'s \LS{}. This is not optimal. \\
+
+A better solution is to have a static \SPE\ kernel on
+all \SPE{}'s. This kernel should be the only \SPE\ program loaded by
+the \PPE{}. Through this kernel, \SPE\ programs can be uploaded and
+run on each \SPE\ without the need for extra thread creation.
+
+First we will discuss the requirements for the \SPE\ programs and
+lastly, we analyze the \SPE\ \ELF\ format to find a way to circumvent
+the trivial way of executing \SPE\ programs. This will result in a final
+specification for the \SPE\ programs and the basic means to do it.
+
+Furthermore, on the way, we will gather information for requirements
+for the kernel. How it should be developed and what features it should
+have.
+
+\subsection{Requirements for the SPE Program}
+
+The system running behind NumPy, should be able to run the \SPE\
+programs as fast as possible. This means, that transfering the program
+to the \SPE{}'s, should be fast.
+
+It might also be relevant to have a high level of control with the way
+an \SPE{}'s \LS{} is partitioned. If the data layout of an \LS{} can be controlled,
+it gives some flexibility regarding where to put program code and data.
+
+Ideally, the following items are the key goals for making the system
+execute the \SPE\ programs as fast as possible.
+
+\begin{itemize}
+\item{Create as few threads as possible}
+\item{Transfer as little as possible}
+\item{Create position independent code}
+\end{itemize}
+
+To attain the first, we need to exclude the trivial way of
+executing \SPE\ programs and develop a specific kernel to do this job.
+
+The second goal can be attained by only transferring the actual
+program code that is needed, and not waste time setting up an entire
+SPE context. This entails viewing program code as regular data. The
+kernel should be able to have at least two buffers for \SPE\ programs,
+for the ability to double buffer programs. This would hide the
+latencies of transfering the programs and therefore no actual transfer
+is requested when the program is needed.
+
+
+
+To be able to run \SPE\ programs and to be as flexible as possible,
+the \SPE\ program must be position independent. This means that the
+program can be run from anywhere in the \LS{}. This also allows the
+possibility for double buffering programs.
+
+In his masters thesis\cite{cellcsp}, Mads Alhof Kristiansen discusses
+ways of utilizing the \CBE\ to implement a framework for running CSP
+programs. One of the issues he is dealing with is the fact the he
+needs to be able to execute user-defined code on a \SPE{}. He
+concludes that it is difficult(practically impossible), to use
+position independent code, because the provided libraries from IBM are
+not position independent and thus impossible to link with them. Nor is
+it possible to recompile the libraries, because there is no available
+source code for them.
+
+A key difference between CellCSP and NumPy on the \CBE\ is, that
+CellCSP has its user program the \SPE{}'s, while NumPy has its users
+program the \PPE\ and then transparently incorporating \SPE\
+functionality.
+
+This difference entails that we know in advance, which libraries
+NumPyCBE requires. Though it is impossible to link the libraries
+to \SPE\ programs, the libraries can be linked to the kernel and
+through function pointers, they can be available to the \SPE\
+programs. Though this seems like a tedious solution, it actually
+isn't. Almost all functionality on the \SPE{}'s is done with
+intrinsics, see section \ref{sec:intrinsics} on
+page \pageref{sec:intrinsics}. As intrinsics essentially are inline
+assembly language instruction, they do not reside in a
+library. Actually, the only library needed, is for a random number
+generator.
+
+\subsection{The SPE ELF Format}
+
+When compiling an \SPE\ program using \program{spu-gcc}, an object
+file is created in the \ELF\ format.
+
+The \SPE\ \ELF\ format is composed of three sections. A data, text and
+toe section. The text section contains the executable instructions of
+a program\cite{elf}. This part of the \ELF\ file can be extracted by
+disassembling the object file using \program{spu-objdump}.
+
+The result of disassembling an object file, is the machine code
+instructions given in plain text. Both given as assembler instructions
+and as the machine code given in hexadecimal values. These hexadecimal
+values can be extracted and used as functionality on the \SPE\ through
+the kernel.\\
+
+This information will serve as a starting point for development
+of \SPE\ programs and the kernel.
+
+\section{SPU Shaders}
+
+SPU shaders are essentially functions created as described in the
+previous section. The name originates from shaders in graphics, where
+graphics hardware is programmed to calculate rendering effects. The
+shaders gives a flexible way of programming the graphics processing
+unit, instead of the fixed function pipeline seen in older graphics
+hardware. Commonly, code fragments injected into a processing unit, in
+this context a \SPU{} and inspired by \cite{spushaders}, is called a
+shader or an SPU shader.
+
+Likewise, the SPU shaders are meant to be a way to program
+the \SPU{}'s in an easy and flexible way. In the following sections we
+will analyze and discuss the potential of the SPU shaders and how they
+are created.
+
+%An example of the set of function pointers can be seen in code
+%listing \ref{lst:fpointers}.
+
+%\examplecode{code/functionpointers.c}{Example set of function pointers}{lst:fpointers}
+
+\subsection{Creating SPU Shaders}
+
+Only a few steps is needed to create an SPU shader. First of all,
+since the SPU shader should be a flexible way of creating \SPE\
+functionality, the kernel would not know anything about any function
+requirements, both in the sense of arguments and return type. It is
+therefore wise to specify a few function prototypes, to be able to
+unify a possibly large collection of SPU shaders.
+
+The set of prototypes should have argument lists that support all the
+SPU shaders. Ideally, only one prototype should be made, but since
+NumPy features a wide variety of functions, it is not likely to be so.
+
+To keep the kernel as slim as possible(discussed in a later section),
+the result of a function should be transferred directly from the SPU
+shader to the \PPE{}. 
+
+The prototypes argument lists could use the same idea as Python
+does. Instead of having one prototype for functions with one argument,
+one prototype for functions with two arguments and so on, an array of
+arguments could be used or a structure of arguments. This forces the
+SPU shader to handle the argument list by itself. This is not a
+problem, since it knows which arguments it must expect.
+
+Likewise, no return value should be used. Rather than having a static
+return value, one or multiple of the arguments could be used as
+references to return values.
+
+An example of the finished prototype can be seen in
+listings \ref{lst:prototype}.\\
+
+\examplecode{code/prototype.c}{An example of a prototype for SPU shaders}{lst:prototype}
+
+When the prototypes are designed the next step is to develop the SPU
+shader. The SPU shader is developed just like any other C program,
+though function calls must be handled differently.
+
+Function calls to other functions should be inlined, because the code
+should be position independent. Normal function calls are not
+prohibited, but requires the called functions to be defined at a given
+fixed offset, based from the calling function. This is not impossible,
+but handling normal function calls requires extra work and linkage
+overhead and should not be necessary.
+
+The SPU shaders functionalities should not constitute an entire
+program, but rather a single function. This prevents the size of the
+function to explode and minimizes the number of function calls. Thus
+typical function calls can be omitted and inlining used instead. As
+indicated earlier, the \SPU{}'s functionality is obtained through
+intrinsics, which are inlined assembly code and are not function
+calls. And, as stated in section \ref{sec:loopunrolling} on
+page \pageref{sec:loopunrolling}, inlining functions can reduce
+function call overhead and again, SPU shaders should be small
+functions, so the code size will not explode. \\
+
+As it was mentioned before, the text section of the compiled code is
+extracted. The text section is divided into a part for each C function
+in the source file. Each of these parts can be used as an SPU shader.
+
+
+The developed object file is disassembled with \program{spu-objdump}
+into readable machine code instructions. The text part of the
+disassembly can be transformed into code fragments or SPU shaders by
+using the hexadecimal values of the machine code. The SPU shader can
+then be put into the \PPE\ code as an array of unsigned integers and
+then uploaded as data to the \SPE{}'s.
+
+In listing \ref{lst:recipy} a step by step overview of the SPU shader
+generation is shown. The first step compiles the code, but does not
+link it, to an object file. The second step disassembles the object
+files machine code instructions and the third step parses the
+disassembled instructions and creates two files: one file containing
+an array of hexadecimal values and one containing a binary output. See
+section \ref{sec:oparser} on page \pageref{sec:oparser} for a more
+detailed description of the parser script.
+
+As an example, code listing \ref{lst:simple_shader} show a very simple
+SPU shader, printing the number $123$ to the screen. Notice that an
+auxiliary function is used for printing. This function is obtained using
+the \variable{funcs} pointer given as input to the shader and is
+explained in the section \ref{sec:disp}. The listing
+in \ref{lst:simple_shader_disassmbled} shows the disassembled output
+from calling \program{spu-objdump}. It shows the assembler
+instructions and their corresponding hexadecimal values.
+
+\examplecode{code/recipy.c}{Step by step overview of SPU shader creation}{lst:recipy}
+
+\examplecode{code/simple_shader_code.c}{A simple SPU shader printing the number $123$}{lst:simple_shader}
+
+\examplecode{code/simple_shader.o.dump}{A simple SPU shader disassembled}{lst:simple_shader_disassmbled}
+
+\subsection{Using SPE Shaders}
+
+Once an SPU shader is created, it must be transferred to
+the \SPE{}'s. The \PPE\ must either load the code fragment from a
+file, which is costly, due to disk accesses, but more flexibility can
+be achieved, or it can be inserted directly in the \PPU\ code as an
+array. In either way, the \PPE\ must inform the \SPE{}'s kernel, where
+the SPU shader is. Once the SPU shader is in the \SPE{}'s \LS{}, the
+kernel can run it through a function pointer, given the prototype as
+discussed earlier.
+
+When the SPU shader is finished, it returns to the \SPE\ kernel, where
+another SPU shader can be run. Given the fact, that the SPU shader is
+position independent, the kernel could have transferred another SPU
+shader while executing the first. It only requires allocated memory
+for both.
+
+\subsubsection{When To Use SPU Shaders}
+
+SPU shaders gives great flexibility. Running an application such as
+Python, which includes a wide variety of functionality, it is
+practically impossible to specify an \SPE\ program, that can feature
+them all. With SPU shaders, one can upload arbitrary functionality
+without transfering too much and without a switch of context.
+
+But, with a restricted set of prototypes and limited access to
+external libraries, it should not be regarded as a general solution
+when programming SPE's. However, for porting NumPy, it seems like an effective
+way of executing code on the SPE's.
+
+\subsection{SPU Shader Considerations}
+
+\SPU\ shaders can achieve good performance, because they do not
+ require to implement a full \SPE\ program, but rather a single
+ functionality. They omit the reinitialization of the \SPE\ for each
+ functionality and only one \SPE\ context, the kernel, should be run
+ from the \PPE{}.
+
+But, if the SPU shaders become to large, any inlined functionality can
+become problematic. If many inlined function calls are used, register
+spilling can occur. See section \ref{sec:loopunrolling} on
+page \pageref{sec:loopunrolling} for clarification.
+
+Any debugging of an SPU shader is difficult. They require a suitable
+testing environment, since they can not be run as is. For testing,
+outputting functions can be established through a set of function
+pointers. For example, a function for outputting a vector of floating
+points or, as seen in code listing \ref{lst:simple_shader}, a function
+to print out integers.
+
+In scientific computing, the problem size can easily exceed the size
+of the \LS{}. To handle this, the data must be transferred using
+double or multiple buffers, as discussed in
+section \ref{sec:doublebuffering} on
+page \pageref{sec:doublebuffering}. This makes sure the data latencies
+are hid. For each SPU shader run, each result needs to be flushed to
+the \PPE{}, because the result is typically of the same size as the
+problem.
+
+For smaller problem sizes where all data can reside in
+the \SPE{}'s \LS{}, the data latencies can, of course, not be hid,
+but if the result is needed by the next operation, it can be kept in
+memory on the \SPE{}'s to omit \DMA\ calls.
+
+
+A fairly typical scenario, would be to have an operation taking two
+arguments and producing one result, where the the result would be used
+in the following operation. One of the arguments from the first
+operation, might also be used in the following operation. So, when the
+data can reside in \LS{}, some transfers can be omitted.
+
+These optimization can, of course, not be applied when data is larger
+than \LS{}. Though, a small optimization can limit the data latencies
+by reversing the order of data blocks. That is, the order of the data
+in the first operation is $data[0 \dots n-1]$ and in the second, the
+order is $data[n-1 \dots 0]$. This would insure, that the last data
+block in the first operation is done first in the second, to save a
+block transfer. See a graphical representation of the idea in
+figure \ref{fig:blockordering}.
+
+%//A PIC OF THIS???
+
+\figscale{figures/block_ordering.pdf}{Ideological ordering of the blocks.}{fig:blockordering}{0.6}
+
+Any SPU shader should be created with the following in mind:
+
+\begin{itemize}
+\item{Too much inlining causes large code and risks register spilling(this can be detected with Cell simulator or by obtaining high running times).}
+\item{The larger the SPU shader, the harder the debugging. Another reason to keep the shader as simple as possible }
+\item{Data from small problem sizes can be passed on to the next operation}
+\end{itemize}
+
+With the SPU shader requirements in hand, it is time to define the
+requirements for the kernel.
+
+\section{The Dispatcher}
+\label{sec:disp}
+
+When the SPU shaders are implemented, the \SPE{}'s must be able to
+receive them. This is the kernels job. This kernel will in this thesis
+be called a dispatcher.
+
+The dispatchers job is to get the correct SPU shader and its
+corresponding arguments. Essentially, the dispatcher should establish
+space in the \LS\ for the SPU shader itself, local memory for the SPU
+shader and data blocks. 
+
+Then, by demand from the \PPE\ part of the NumPy program, the
+dispatcher should transfer information about the given SPU
+shader. That is, the location of SPU shader and the given arguments.
+
+When the SPU shader is transferred, the dispatcher executes the SPU
+shader and waits for it to finish and then it is able to dispatch
+another operation. \\
+
+This section will contain an analysis of the dispatcher, what tasks it
+should be given, how it can handle these tasks and administer the \LS{} memory.
+
+\subsection{Tasks of the Dispatcher}
+
+The dispatcher is the link between the \PPE\ program and the developed
+SPU shaders. Because the SPU shaders are small program fragments, they
+do not know anything about the layout of the \LS\ on
+the \SPE{}'s. That is why, the first task for the dispatcher is to
+organize the memory of the \LS{}. Next it must be able to receive an
+operation\footnote{An operation is a collection containing an SPU
+shader and its corresponding data and arguments} and finally,
+terminate correctly.
+
+\subsubsection{Memory Layout on the SPE}
+
+To achieve optimal performance, the memory in \LS\ must be organized
+in a manner, which suits all the developed SPU shaders, because
+allocation and freeing memory can be expensive tasks when done
+extensively.
+
+Three chunks of memory, besides the memory given to the dispatcher
+itself, must be allocated.
+
+\begin{itemize}
+\item{Memory to the SPU shader itself}
+\item{Local memory for the SPU shader}
+\item{Memory for data blocks}
+\end{itemize}
+
+These three chunks must be partitioned accordingly to the demands of
+all the SPU shaders, since the memory should not be reorganized in a
+later stage. It is possible to have an SPU shader with a alternative
+demand of memory allocation, thus it should feature some
+reorganization logics to alter the layout itself. 
+
+
+%This extra logic consumes extra space and therefore less space
+%for the data and extra time to reorganize the memory layout and
+%therefore a bigger time overhead. 
+
+The SPU shader can interpret the assigned memory in which ever way it
+wants. The memory can be used as one big chunk of available data, not
+needing to obey the guidelines provided by the dispatcher. The
+assigned memory for data blocks, can be used for other things, as well
+as the memory for meta data, can be used for other needs.
+
+Figure \ref{fig:dispatcher_mem} depicts the \LS\ memory.
+
+%\figscale{figures/dispatcher_layout.pdf}{Memory layout on the dispatcher}{fig:dispatcher_mem}{0.5}
+\figscale{figures/ls_default.pdf}{Memory layout on the dispatcher}{fig:dispatcher_mem}{0.5}
+
+The actual sizes of the chunks, must be defined by experimenting with
+different layouts. Though the chunk for the dispatcher is determined
+when it is fully implemented, including the local variables used and
+the actual code.
+
+The size of the memory for the data block partition depends on how
+much data the \SPE{}'s needs or at least, how much it can hold at one
+time. All the functions that will be implemented in this thesis,
+demands at most five objects. Three arrays and two scalars. This is
+seen with matrix matrix multiplication done in level three \BLAS{}.
+Essentially, no subdivision for arrays and scalars should be done,
+because they, in NumPy, inherit from the same object. The only
+difference is the size of memory needed for data. Operating with
+single precision arithmetics, only four bytes are required for
+scalars, whereas much more memory is needed for arrays, depending on
+their dimensions.
+
+Using $64 \times 64$ blocks, which is the most common used size for
+blocks, blocks of double precision floating point operations will
+consume 32KB of memory. Using single precision, one block consumes
+16KB. Partitioning the memory with double precision in mind,
+capability of double buffering and needing blocks of data from three
+different python objects, the memory for the data blocks uses $3 \cdot
+2 \cdot 32KB = 192KB$.
+
+The kernel should provide a pointer to each of the six blocks, though
+the chunk is a contiguous memory partition and thus the SPU shader can
+in theory use it to whatever it needs. This should remove any
+considerations regarding letting the SPU shader reorganize the layout,
+as mentioned before.
+
+The rest of the memory is left for SPU shader memory, which is used
+for internal dynamic memory used by the SPU shaders.
+
+\subsubsection{The Memory Layout on the SPU Shader}
+
+To let the SPU shader know how the dispatcher resolves the partitioning
+of the \LS{}, the dispatcher creates a structure of pointers. 
+
+This structure points to the parts of the \LS{}, where the SPU shader
+can use memory. That is, the starting address of its own local memory,
+the six pointers for the six blocks of data.
+
+With this information, the SPU shader can make use of the \LS\ without
+interfering with any of the other dynamically created data.
+
+\subsubsection{SPE Identification}
+
+As mentioned before, it is wise to have a standard declaration of the
+prototypes for the SPU shaders. As discussed earlier, the dispatcher
+does not need to know anything about the arguments for the SPU
+shader. Nevertheless, as the dispatcher is the basic structure around
+the SPU shaders, it is given a unique id for easy identification. This
+id should also passed on to the SPU shader. The id spans from zero to
+the number of \SPE{}'s used, minus one.
+
+The unique id serves as a means to an effective parallel orchestration
+of the data and it diminishes the contact to the \PPE{} while
+computing in parallel. The \PPE{}'s role should be as little as
+possible, as it was stated in section \ref{sec:ppe} on
+page \pageref{sec:ppe}.
+
+\subsection{Shader Control}
+
+As discussed earlier, the dispatcher should be as slim as
+possible. This is because, the less memory the dispatcher uses, the
+more memory is left for computations and data. Also, the less the
+dispatcher manages, the more control the SPU shaders have. When the
+dispatcher have less control, the SPU shader can run in a less rigid
+context. If the dispatcher should include functionality for the SPU
+shaders, it should include an extensive library, which in turn left
+less room for SPU shaders and actual data.
+
+Another important feature of letting the SPU shader have all the
+logic, is the developer can determine the parallel strategy. It is not
+given that it should use ``bag of tasks'' or any dynamic or static
+orchestration.
+
+\section{Final Specification of the Dispatcher and SPU Shader}
+\label{sec:specs}
+
+To conclude this chapter, we will sum up some of the more important
+requirements and specifications discussed and analyzed of both the
+dispatcher and the SPU shader.
+
+The dispatcher should be as slim as possible, because the most
+functionality should be in the SPU shader. The following lists the
+functionality specifications of the dispatcher:
+
+\begin{itemize}
+\item{Receive unique identification from \PPE\ }
+\item{Initialize memory layout in \LS\ }
+\item{Provide basic functionality from external libraries}
+\item{Receive and run an SPU shader}
+\item{Terminate the \SPE\ process when needed}
+\end{itemize}
+
+The SPU shader should implement the functionality for an
+operation. Both in the sense of computing the data, but also getting
+and putting data from the \PPE{}. The following lists the
+functionality specifications of the SPU shader.
+
+\begin{itemize}
+\item{Initiate \DMA\ transfers}
+\item{Orchestrate the data problem for parallelization}
+\item{Compute the operation}
+\end{itemize}

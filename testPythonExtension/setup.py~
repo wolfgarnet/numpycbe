@@ -1,0 +1,2 @@
+from distutils.core import setup, Extension
+setup(name='numpycbe',ext_modules=[Extension('numpycbe',sources=['numpycbe_no_init.c'], library_dirs=['/usr/lib/'], libraries=['spe2'])])

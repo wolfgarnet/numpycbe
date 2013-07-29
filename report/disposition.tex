@@ -1,0 +1,80 @@
+%% Report template, by Christian Wolfgang. 20070322
+
+% Document class
+\documentclass[10pt,a4paper,onesided]{article}
+
+% Styrelizeren
+\usepackage{styrelizer}
+
+\begin{document}
+
+\renewcommand{\thepage}{\roman{page}}
+\renewcommand{\thepage}{\arabic{page}}
+\setcounter{page}{1}
+
+\section{Introduction}
+Give a formal introduction to the problem/assignment at hand. Short
+overview of the work done.
+\subsection{Motivation}
+
+
+\section{The Cell Broadband Engine}
+What is the CELLBE!
+\subsection{Architecture}
+Describe the CELLBE architecture. The specs, the pros the cons.
+Cons: Lots of data and few operations...
+\subsection{Programming techniques}
+Double buffering, simdization and so on.
+
+\section{Parallel Programming Techniques}
+Maybe this section isn't necessary???
+
+\section{Python}
+\subsection{Why Python}
+\subsection{Python Objects}
+\subsection{The NumPy Structure}
+\subsection{Proposed CBE Enhanced Structure}
+
+\section{Blas / Lapack}
+
+\section{Analysis/Datastructure(Working title)}
+What structures are available, which of them are interesting, which of
+them can be used? Which structure did we choose?
+\subsection{Optimizations/improvements}
+Can the structure be optimized in any way, how?
+
+\section{Analysis/Dispatcher(Working title)}
+Why is a dispatcher important.
+\subsection{The SPE}
+Something about having multiple programs on an SPE, how to switch
+between them.
+\subsection{Optimizations/improvements}
+Can the dispatcher be optimized in any way, how?
+
+\section{Improving The System}
+May be relevant. Keeping blocks on the SPE. Reverse the direction of
+blocks used. More...
+
+\section{Implementation(Working title???)}
+\subsection{Python/NumPy part}
+\subsection{PPE part/Bag of tasks???}
+\subsection{SPE part/dispatcher}
+
+\section{Testing, Performance and Results}
+\subsection{Testing}
+Validation, show/discuss limitiations(if any), conclusion on testing.
+\subsection{Performance and Results}
+Graphs, discuss results. Did we achieve what we wanted? Discuss any
+optimizations done.
+
+\section{Conclusion}
+\subsection{Perspective}
+\subsection{Future Work}
+
+
+
+\end{document}
+
+
+
+

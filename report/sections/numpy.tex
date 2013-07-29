@@ -1,0 +1,702 @@
+The NumPy module is the center of attention in this master thesis. The
+module and some of its more important data structures was introduced
+in chapter \ref{chapter:python}.
+
+An important motivation behind this master thesis is to open up for
+the possibility of giving users of NumPy the power and flexibility of
+utilizing the \CBE\ processor as seamlessly as possible. The NumPy
+module has functions that can be ported to the Cell BE, and by doing
+so let end-users execute Python applications without having to modify
+anything in their programs in order to harness the power of the CELL
+BE.
+
+The NumPy module is implemented with sequential behavior and does not
+take advantage of any kind of parallel hardware, so getting some of
+NumPy's core functionality to operate in parallel in the Cell BE will
+be significant achievement.
+
+
+As work on this project began, the initial idea was to hook up all
+Cell BE functionality in NumPy in such a way, that NumPy could be
+installed just as originally intended, but also utilizing the \CBEv{'s}
+SPE's. This means that the end-user would simply install NumPy on a
+\PS\ or other CELL platform and not having to worry at all,
+about doing Cell BE specific configurations or modifying any existing
+Python applications. This would make it a completely seamless task
+for an end-user to benefit from the power of the Cell BE when
+executing Python applications.
+
+
+A lot of work has been put into analyzing NumPy and doing a kind of
+reverse engineering on NumPy, to be able to add functionality in the
+right places. This proved to be a very time consuming process, because
+the level of complexity of replacing certain operations in NumPy were
+quite high and also because of the basic fact that NumPy takes quite a
+while to install. As work progressed, it was chosen to build a
+separate Python module instead, NumPyCBE. In this way the three
+benchmark applications were run in versions that uses this separate
+module instead of the original NumPy. This is only a minor issue,
+since the functionality for running the benchmarks on the Cell BE
+could easily be moved to NumPy, when a little extra work is spend on
+analyzing NumPy code.
+
+
+This chapter describes the work done analyzing and reverse engineering
+NumPy. While it is definitely doable to extend NumPy with Cell BE
+functionality directly, there was not enough time allocated in this
+project to get to at point where all three benchmarks could run though
+the modified original NumPy module. It was chosen, that it would be
+better to run all benchmarks through a separate Python module, instead
+of running some functionality through NumPy and some
+functionality through a separate module.
+
+
+We will discuss aspects of modifying NumPy, give small practical examples of how the modifications could
+actually be done with NumPy and give hints and suggestions for future projects, where it might be considered to
+extend NumPy in this way. The version of NumPy used is 1.2.1. Names of files and content may vary from version to version.
+
+
+
+\section{Modifying NumPy}
+\label{sec:extending_numpy}
+NumPy consists of tens of thousands of lines of code spread across
+multiple files. This section focuses on ways to port NumPy to the Cell
+BE by modifying these files.
+
+When NumPy is installed, many files are involved in the compilation
+process. Some of these files are particularly interesting, because
+they can be used to add and/or modify NumPy functionality. They will
+be referred to later in this chapter. Here is a list introducing
+them together with a short description.
+
+\begin{itemize}
+ \item{\file{ndarrayobject.h} This holds the definition of the
+ \struct{PyArrayObject}. The PyArrayObject represents the ndarray. To add more
+ meta data to the ndarray, this is the place to do it. Another file
+ also holds structure definitions and these two files should be kept
+ in correspondence. The other file is \file{numpy.pxi}.}
+
+ \item{\textit{multiarrayodule.c} The file has many essential methods. Among
+ these are methods that set up python variables
+ (e.g. \function{setup\_scalartypes(...)}) and methods for manipulating
+ ndarrays.}
+
+ \item{\textit{arrayobject.c} This file holds many methods that
+performs operations on ndarrays. This includes operations like
+multiplication. Unary and binary functions work though Python by way
+of Python's \function{PyCall\_Function} method that are called from
+the functions \linebreak[5] \function{GenericBinaryFunction(...)}
+and \function{GenericUnaryFunction} among others. When
+\linebreak[5] \function{PyCall\_Function} is called, the control is given to Python. With the
+call to Python, a parameter "op" is specified. It is assumed that
+Python will use function pointers that has been registered as part of
+the NumPy installation, if the "op" value specifies this. The file
+also has methods for indexing ndarrays. This is used when slicing
+e.g. matrices like A[1,:].}
+
+ \item{\textit{ccompiler.py} In this file there are settings how
+ compilation is done during an installation of NumPy. In this file it
+ is possible to include libraries for linking etc.}
+
+ \item{\textit{arraytypes.inc.src} and \file{scalartypes.inc.src}
+ These files are written with tags that are replaced with actual
+ type-information before compilation. In this way functionality is
+ included for many different types.}
+
+ \item{\textit{linalg.py} This file holds linear algebra functionality. Among
+ other, this includes LU factorization (in the method "solve", which
+ can be called with the same name directly from Python).}
+
+ \item{\textit{ufuncobject.c} This file contains many math functions that
+ operate on ndarrays in element wise fashion.}
+
+ \item{\textit{genapi.py} This file contains a script that registers methods so
+ that they will be callable from other parts of NumPy.}
+
+ \item{\textit{umathmodule.inc.src} This file implements functionality for
+ NumPy's Universal Functions (UFUNCS). UFUNCS are functions that
+ operate on ndarrays in an element-wise fashion. Like the files
+\file{arraytypes.inc.src} and \file{scalartypes.inc.src}, this file is first
+ manipulated with a pre-compilation step, where a script replaces
+ keywords in the file for actual types and operations in order to
+ generate a set of functions for each type and operation. Functions
+ defined in this file are typically called from functions defined in
+ the file \file{ufuncobject.c}.}
+\end{itemize}
+
+The \struct{PyArrayObject} introduced in section \ref{sec:python-numpy}
+on page \pageref{sec:python-numpy} can be extended to support
+additional meta data that effectively allow the ndarray to be
+processed using the SPE's. In chapter \ref{chapter:analysis} the FHB
+data structure is selected as the preferred structure to be used in
+this thesis. In code listing \ref{lst:pyarrayobject-numpybe} the
+new \struct{PyArrayObject} can be seen. This structure has some new
+fields that makes it more suitable and effective for use with the FHB
+data structure and the Cell BE. The new additions are all placed in
+the last part of the structure. In the following, each new addition to
+the structure is listed with a short description. A few of these new
+additions will be further explained later in this chapter. Some
+padding is included in the structure to make it fit on exact 16-byte
+boundaries. This is done because DMA transfers must be done with sizes
+that are multiples of 16.
+
+\begin{itemize}
+\item{\texttt{blockData} points to an array containing pointers to the data blocks used in the FHB structure. They are layed out in row major order, not padded.}
+\item{\texttt{numberOfBlocks} indicates how many data blocks the ndarray is comprised of.}
+\item{\texttt{numberOfBlocksXDim} indicates how many blocks there are on the x-axis in the FHB structure.}
+\item{\texttt{numberOfBlocksYDim} indicates how many blocks there are on the y-axis in the FHB structure.}
+\item{\texttt{blockSize} indicates how many data elements there are in a single row within a data block.}
+\item{\texttt{size\_in\_bytes} indicates the size of an element in the ndarray.}
+\item{\texttt{paddingx} indicates how much padding there is included at the end of the last rows of the last block on the x-axis.}
+\item{\texttt{paddingy} indicates how many rows that only include padding in the lower part of the blocks in the lowest row of blocks.}
+\item{\texttt{slice\_info} points to a structure that contains information indicating where data is located, if the ndarray represents a sliced object.}
+\end{itemize}
+
+\examplecode{code/pyarrayobject_numpybe.c}{NumPy PyArrayObject}{lst:pyarrayobject-numpybe}
+
+
+\section{Alignment Issues}
+Since DMA transfers must be done on at least 16 byte alignments (128
+bytes alignment is preferred if there is enough memory available,
+because of cache line size), the objects that are created by original
+NumPy code, must be copied to an aligned memory location if they
+should be transferred to the \SPE{}'s. This likely applies to many of
+the \struct{PyObject}s that represents ndarrays. A generic solution
+would be to replace the allocation routine used be Python with one
+like \texttt{malloc\_align} that can be specified to allocate space on
+16- or 128 byte boundaries.
+
+Also, be aware that any pointers that reside in the PyArrayObject must point to memory with legal alignment,
+if data in this location is needed on the SPE's.
+
+\section{Integrating NumPy With the Dispatcher}
+
+%There is references to the dispatcher and shaders - should this section be moved, or is it ok?
+
+Keeping the original design, where the end user should be able to
+install NumPy as normal and start using the Cell BE through NumPy
+straight away, the dispatcher and shader functionality, that is
+developed for this thesis should be bootstrapped in NumPy.
+
+This can be achieved by adding code to the appropriate NumPy
+files. This section describes how this can be done and some of the
+important and interesting things that happens (under the hood) hidden
+from the user, to make NumPy effectively run on the \CBE{}.
+
+\subsection{Starting the Dispatcher}
+The dispatcher should be started once and then be available for the
+entire duration of the Python program being executed. To facilitate
+this, the dispatcher could be started in the
+method \linebreak[5] \texttt{setup\_scalartypes(...)}, which is placed in the
+file \file{multiarraymodule.c}. The functions itself has nothing to
+do with the dispatcher, but starting the dispatcher here, has the
+advantage that
+
+\begin{itemize}
+\item{the dispatcher is only started once and}
+\item{the dispatcher is started when NumPy is imported into a Python program.}
+\end{itemize}
+
+When the dispatcher is up and running it is ready to receive signals from the PPE.
+
+\subsection{Starting Shaders}
+A function called in a program using NumPyCBE must have the same semantics,
+from the users point of view, as the function call would have if NumPy was used.
+In NumPyCBE the function is implemented either by code running on the \PPE\, the \SPE{}'s
+or a mix. When code must be run on the \SPE{}'s, a shader is uploaded to each \SPE\ and
+started.
+
+What is interesting in the context of this chapter is how NumPy can be
+extended with this functionality. Many of the function calls, that one
+could imagine a program
+calling passes through methods in the file \file{arrayobject.c}.
+An example of this is multiplication, where the
+method \linebreak[5] \function{PyArray\_multiply} is hit.
+
+A convenient way to start shaders based on methods hit in this file, would be to remove
+the call to functions like \function{GenericBinaryFunction} and \function{GenericUnaryFunction} and
+instead call a custom method. This custom method could have a case-statement that takes into
+account the arguments and type of operation that is needed and then upload the appropriate
+shader to the \SPE{}'s.
+
+By removing calls to the generic functions in \file{arrayobject.c},
+the normal flow is stopped. This is an effect of Python not being
+called using the \function{PyCall\_Function}. In the standard flow,
+Python is given control over how to execute the given operation - this
+is assumably done in Python by calling functions that are registered
+in a Python dictionary when NumPy was installed. By stopping the flow,
+Python is not given control over how to perform an operation and we
+can effectively insert our own functionality that solves the problem
+at hand using shaders etc.
+
+This is just an example of where shaders could be started by hooking up the functionality in
+the NumPy files. More practical examples are described later in the chapter.
+
+\section{Deallocation}
+
+When the reference count on a \texttt{PyObject} has reached zero, it
+can safely be deallocated. Since the reference counter is placed in
+the structure expanded by the macro \texttt{PyArray\_HEAD}, every
+object has a reference count. For ndarrays, the
+function \texttt{array\_dealloc(PyArrayObject *self)} placed in the
+file \file{arrayobject.c} handles deallocation.
+
+If the \struct{PyArrayObject} structure holds new members that
+requires deallocation it must be added to avoid memory spilling.
+
+\section{Data Conversion to FHB Format}
+%//Hvor indsaettes dette i NumPy, eller hvor kan det indsaettes.
+%//Der er udviklet en algoritme der omdanner data til FHB og generer noedvendig medata data baseret paa struktur ref.
+%//Ref til kildekode i bilag X.
+
+In NumPy there are some basic operations that must be supported. These operations
+forms the basis of being able to use NumPy arrays effectively in applications.
+
+An algorithm must be implemented to transform the data part of standard NumPy arrays into the full hybrid block format.
+In NumPy data can exist contiguously or non-contiguously and the formats are typically C-style (row major) of
+Fortran-style (column major).
+If a contiguous row major layout is assumed, an FHB transformation as described in chapter \ref{sec:fhbdescription}, could easily be done.
+
+For this thesis, transformations between one dimensional contiguous layout and FHB for ndarrays has been implemented.
+FHB is used to support arrays of up to 2 dimensions. Additional dimensions are split up into multiple two dimensional FHB ndarrays.
+
+The conversion function developed can be inserted in NumPy in function \texttt{\_array\_fromobject(...)} in file \file{multiarraymodule.c}.
+This function is called every time an array is created using NumPy, and all meta data is available to be able to transform the data
+into a FHB format using the new meta data on the \texttt{PyArrayObject}.
+
+If the call to the conversion algorithm (named \texttt{numpy2FHB(...)}) is inserted in the last part of the function \texttt{\_array\_fromobject(...)},
+more precisely after the \texttt{finish} tag as shown in code listing \ref{lst:numpy2fhb-insert}, the conversion takes place
+right after the initial creation of the ndarray with data a contiguous one dimensional layout.
+
+More precisely, it means that if an array is created in NumPy, like \texttt{A = array([[1,2],[3,4]])}, the array is converted
+to the FHB format before being assigned to the variable A.
+
+\examplecode{code/numpy2fhb_insert.c}{Calling numpy2fhb}{lst:numpy2fhb-insert}
+
+%//Indsaet evt. et laekker illustration eller henvis til smaa eksempler fra data struktur afsnittet.
+
+%When no slicing and broadcasting are done, maybe it would make sense only to transform matrices when they are needed?
+%Then they could be transformed after normal NumPy operations (broadcasting etc.) and transformed back again after return.
+
+%//Write where it makes sense to insert the transformation (in 105mult return and not where it is now... And make check for already allocated...)
+
+
+%//write about FHB from nd arrays and the complications this will give (example with 3d cube.)
+
+%//operations such as slice and broadcast (newshape?)
+
+%//Hvor goeres det? Ekspel koert fra NumPy.
+
+\subsection{Conversion of Multidimensional Arrays}
+%//hvorfor er dette smart og hvad er ulemperne (slice paa tvaers og hvis der kommer hoejereordens (mere end 2-d) operationer, hvad hvis man foerst
+%//konverterer arrays, naar det er noedvendigt - dvs. lige inden de skal bruges paa SPE'erne?).
+%//Generelt vil vi gerne undgaa at kopiere data i main memory - dvs. vi vil helst oprette objekter der refererer til ekstereinde data,
+%//men dette er vel hverken fortaler for at operret hele ndarray til FHB fra start, eller at gore det ad hoc...
+
+As mentioned, code was developed to transform an entire multidimensional ndarray
+into a two dimensional FHB format.
+
+Figure \ref{fig:calletree} shows a recursive call tree. This
+illustrates how a multidimensional array is transformed into one or
+more two dimensional ndarrays with FHB layout. For each dimension, the
+ndarray is checked to see how many dimensions of lower order exists
+and recursive calls are made until the second dimension is
+reached. When the second dimension is reached, the routine that
+actually transforms the data are called with the appropriate indexes
+to the data that exists within the given matrix.
+
+In the figure, the contiguous one dimensional data array is
+illustrated in the bottom. The syntax used is actual NumPy syntax, so
+this specific array, if declared in NumPy, would result in an ndarray
+with dimensions as specified. The function \variable{index} are used
+to indicate the offset into the array for each call in the recursive
+call tree.
+
+\figscalerotate{figures/calltree.pdf}{Call tree}{fig:calletree}{0.55}{90}
+
+One of the problems that could arise because
+of this, is the time it would take to rearrange data, if a slice was
+made on an inconvenient axis. If the ndarray was not converted from the
+initial NumPy layout from the beginning, the conversion could instead
+be done on-the-fly only for the specific one dimensional and two dimensional array that was
+needed (remember, that max two dimensional arrays are handled on the SPE's).
+
+Also, the one-time cost of converting data to the FHB format initially
+could be saved, if data was not created in e.g.. a contiguous
+row-major layout as it happens in NumPy by executing e.g. $A =
+array([[1,2],[3,4]])$, but instead in FHB from the
+start. If work on extending NumPy as described in this chapter is
+continued, it might be interesting to locate the exact places in the
+NumPy code, where the data creation is initially done.
+
+However, as long as functions are implemented to work with the FHB layout, so it will not be necessary to do more data conversions,
+the initial conversion to FHB should not be a performance issue.
+
+
+%\section{A small practical example: How Numpy can be changed to implement a FHB layout}
+%[todo - this subsection basicly describes how a Numpy array can be given a FHB layout, when an array is created in Python.
+%This includes details about which functions to modify in Numpy.]
+
+\section{NumPy API}
+NumPy uses a specific way of handling it's internal API. A script
+parses the source code files and registers methods. Therefore it is
+import that the syntax be followed, if NumPy is expanded with new
+methods that should be callable from other parts of NumPy. The
+convention is to have the return type on it's own line and then have
+the function name and parameters on the following line. The file
+\file{genapi.py} contains a script that handles this. If additional files
+should be searched be the script, they can be added in the file.
+
+\section{Broadcasting}
+Broadcasting is a NumPy term that expresses a functionality, by which
+an ndarray is expanded on one or more dimensions so it can be part of
+an operation involving another ndarray of larger size. While this is
+an important aspect of using NumPy in general, it is not something
+that is considered in this thesis. It is a trivial functionality and
+one that can easily be avoided by writing test programs that only
+operate on ndarrays, where the sizes are correct from the beginning.
+
+\section{Porting Slicing and Indexing Routines}
+Some basic routines that needs to be ported to be able to work with ndarrays are slicing and indexing.
+\subsection{Slicing}
+\label{subsec:slicing}
+In the original NumPy module, slicing could be done on a matrix,
+thereby returning a sub matrix e.g. a single row. If A is a
+two-dimensional array created by executing this Python code:
+\begin{center}\texttt{A=array([[1,2,3,4],[5,6,7,8]])}\end{center}
+the slice \texttt{A[1,:]} will return the second row of the matrix.
+
+When porting NumPy to the Cell BE and using FHB as the general data
+structure, slicing should be handled with care, to make sure it is
+still effective.
+
+Because the general data structure is changed, slicing will also have
+to be modified. To make slicing effective with the ported NumPy, it's
+important that data is only moved when absolutely necessary. In
+general, of course, but in particular in DMA transfers between the
+SPE's and main memory. If a specific slice is needed on an SPE, it
+would make sense only to transfer the slice and nothing else.
+
+In the following we consider row-slicing
+with a single full row. This is motivated by the \SOR\ test program that
+is used for benchmarking. Later in this section we cast some light on issues
+involved in supporting other forms of slicing.
+
+To make slicing effective, code on the SPE should know which row to
+move to its LS. It makes no sense to move an entire block of the FHB
+data to an SPE, if only a small fraction of this block is actually
+needed. Also, the overhead of initiating DMA transfers and calculating offsets
+are better moved to the SPE's, so it's done in parallel and not to unnecessarily
+burden the PPE.
+
+The following NumPy functions in the file \file{arrayobject.c}
+are involved in slicing a matrix (two dimensional ndarray) like \texttt{A[0,:]}:
+
+\begin{itemize}
+\item{\texttt{array\_subscript\_simple(...)}}
+\item{\texttt{parseindex(...)}}
+\item{\texttt{parse\_subindex(...)}}
+\item{\texttt{getindices(...)}}
+\end{itemize}
+
+The method \texttt{array\_subscript\_simple(...)} takes a \texttt{PyArrayObject} as
+input and returns a \texttt{PyArrayObject} representing the sliced part of the
+input object. In the process of evaluating the body of the function,
+the other mentioned functions are invoked.
+
+What we want is, to move the slicing operation to the SPE's, since we
+don't want to move a lot of data around for no reason. In the context
+of this thesis it means that the shaders executing on the SPE's must
+know if only a certain slice of a matrix should be fetched.
+
+This is in perfect accordance with the way NumPy handles the slicing,
+with respect to not copying data unnecessarily.
+
+Consider the function \texttt{array\_subscript\_simple(...)} seen in code listing \ref{lst:pyarray-subscript-simple}.
+\examplecode{code/pyarray_subscript_simple.c}{array\_subscript\_simple}{lst:pyarray-subscript-simple}
+
+This function is called, when slicing the matrix \texttt{A} is done in
+NumPy by executing e.g.. the statement \texttt{A[1,:]} on the
+array \texttt{A=array([[1,2,3,4],[5,6,7,8]]}.
+The \texttt{parse\_index(...)} function calculates the dimensions,
+strides and offset of the data that should be represented in the
+slice. This data will come in handy when slicing a single row using
+the FHB structure with the \texttt{SOR} test program.
+
+The information calculated in \texttt{parse\_index(...)} is used to
+create a new \struct{PyArrayObject}, \texttt{other}, that has meta
+data about the slice. Note that data is not copied, so the new object
+points into the same data area as the parent object. A pointer to the
+parent object is stored in the new object and the reference count on
+the parent object is incremented by one, to make sure the data area is
+not deallocated while the slice information is still being used.
+
+When working with the FHB data structure and the SOR test program,
+that specifically slices a single row out of a matrix at a time. The
+slicing information we need to create on the relevant data can be
+simplified somewhat. Since we don't use the original data-pointer in
+the \struct{PyArrayObject}, but instead the
+new \field{blockData}(array of pointers), we need to calculate where
+the data needed is located in the old data format and find out which
+row this corresponds to.
+
+Since we allocate our FHB data contiguously within each block, the
+strides information tell us if the slice is row or a column. The
+pointer offset tells us where the initial data in the slice begins,
+with regards to NumPy's original one dimensional data
+structure. Because we know the size of our data blocks and each data
+blocks has the same size (padding takes care of this), we can
+calculate which row (or column) is needed in the slice. We can now
+set meta data on the
+\struct{PyArrayObject}, that the shader can read. The shader can then check if
+the given \struct{PyArrayObject} actually represents a slice and the
+just fetch the relevant data to work on.
+
+In the case of the SOR test program, the only information about the
+slice we need to tell the SPE's what row to use. Then each SPE can
+transfer this specific row into its \LS{}. Notice, that the row is split
+across as many blocks as there are blocks in the x dimension of the
+FHB format. We can store meta data about a slice in a separate
+\struct{SliceObject}. See code listing \ref{lst:sliceObject}. In this
+\struct{SliceObject} we can tell if we are slicing a row or a column and
+how many consecutive rows or columns we need. We can extend the
+\struct{PyArrayObject} with this information by adding a pointer to a
+\struct{SliceObject}, %as seen in code listing \ref{lst:sliceObject-insert}.
+When an SPE receives a \struct{PyArrayObject}, it can now check if the
+\struct{SliceObject} pointer is null, and if it is not, it only needs to fetch
+the data specified in the slice.
+
+If multiple rows were specified in the slice, the procedure is
+analogues to the one for a single row, but it is a more involved
+process if slicing a column, since data is stored in FHB, row major,
+format.
+
+Defining a stride to be the offset of getting from one element to the
+next in a particular dimension. For a single column, there would be a
+stride between each element, as large as the length of the entire
+row. This would mean that more DMA transfers would be needed, where
+each transfers involves less data than for the row-example. Some
+overhead could be introduced to compute the index of the relevant data
+within each DMA transfer. Another way of handling a large number of
+column slices on a single matrix, could be to transpose the matrix
+beforehand, so each column could be transferred using as few transfers
+as possible. However, in order to see if the entire matrix is
+actually needed, we would need to know what the python application
+actually did before executing it, and this is not a very generic
+solution. Another important issue to consider, when storing a
+transposed version of a matrix, is memory usage. If the user has
+calculated how much memory is needed for his data and NumPy suddenly
+uses additional memory for copies of matrices, we could end up
+swapping data to disk and thereby loose a lot of performance.
+
+If we consider a two dimensional data layout, there is a small overhead involved
+for each SPE in calculating the data to fetch, because it can be
+spread across multiple blocks, but this overhead is negligible when
+taking into account the time spend doing actual computations on the
+data and considering applications like BLAS 3 multiplication, where
+the FHB format really shines.
+
+
+%//
+%- Describe how subscript_simple is modified to return the same PyArrayObject as input,
+%but with added SliceObject filled out.
+%- Describe in what way parse_index is modified (or not modified, but how it's result is used)
+%- Describe in what way the normal loop is disconnected (however that makes sense in NumPy).
+%  (basicly how the inputarray is returned instead of the sliced copy! This is what is done in current custom NumPy!)
+%  (if it shows that no time is saved by only adding metadata, just only hit on fact the metadata is available
+%   for the SPE's).
+%- YEAH YEAH, it is home no problem. Just don't create the other object, since it's not needed anyway.
+%- As a sidenote, get to grips with decref/cref for the presentations and also document it in the dealloc section.
+%- Check if NumPy actually copies data to other.
+%  Data is NOT copied. METADATA on dimensions and strides are. Is this needed? If not it can be skipped.
+%  However, what consequence does it have that this data might not be set?
+%  If everything runs though "our" NumPy on CELL, is it not only decref we should be worried about?
+%  So, whether we do slice on SPE or PPE, we can set the SliceObject on the SAME object? Thats a proposal at least.
+%  The cool thing here is that functions that we implement where the PyArrayObject is passed, we can check if it
+%  actually represents a slice :-). To make it wholly work in general, we should expand the function that prints values.
+%  That is "A" instead of "A=...", so this function also only displays the slice only.
+%  So for technical purposes we instead of creating a new PyArrayObject that points to slicedata we only set metadata
+%  on the same PyArrayObject. Any downside? Yes, A[1,:] will be interpreted as the slice from now on!!!!!
+%  So we need to return a new object, but extended with the SliceObject that is easier to interpret for our purposes.
+%  Note that the original data on the new object could be used on the SPE's as well.
+%  Illustrate the row/slice based on info from both sliceObject and the original data.
+%  Also, if A is not used by itself, but only after a slice is indicated, the same object could be reused and
+%  metadata would not have to be copied. The copy, in generel, is to make it more compatible with
+%  NumPy and any future extensions that might be done.
+
+%  So no SliceObject can come in handy to more easily tell the SPE what data should be fetched.
+%  For instance, if is a single row, then the row can be signified with a single digit and a status
+%  can tell the SPE that we need a single row.
+%  And this SliceObject can be inserted here...
+
+%  The SliceObject is important because we actually don;t use the regular stride and offset pointer
+%  info any more!!! We don't maintain it - if we did, we could use it... But that is not part of the design.
+%  
+%  Maybe describe this bottom-up?
+
+%  After that (incl illustration of fetching a single row from FHB for both origial data and SLiceObject),
+%  Do the indexing section. Also, tell how a more generel slicing can be done (from old data or SliceObject - maybe just
+%  SliceObject, if we prove this is also more effective for at singe row regarding computations on the SPE's).
+
+%  INCREF/DECREF. Used internally and can be used externally. Make sure to incref new values - eg. return values.
+%//
+
+\examplecode{code/sliceObject.c}{sliceObject}{lst:sliceObject}
+
+%\examplecode{code/sliceObject_insert.c}{sliceObject-insert}{lst:sliceObject-insert}
+
+
+
+\subsection{Indexing}
+%indexing is also an issue with FHB and the SOR testprogram.
+%Check where this can be hacked (same place as with slicing?).
+%The function PyArray_GetPtr in multiarraymodule.c produced a ptr that
+%seems to be used for indexing into an ndarray.
+%Catch it here and see if this a robust way to change this function
+%to facilitate FHB :-)
+%Yes, this is the way to go!
+
+When indexing an ndarray, it can be done by executing the following
+code: A[1,0]. When using FHB in row major it necessary to handle the
+indexing differently, so the correct element is returned. This can be
+done by changing the functionality of the
+function \function{PyArray\_GetPtr} which is placed in the
+file \file{multiarraymodule.c}. This function computes the index into
+a contiguous array that holds the data of the ndarray, so instead of
+computing the index on the basis of e.g. a contiguous one dimensional
+layout, it should be changed to return the index into a specific block
+and offset into that block for a FHB data layout.
+
+This standard function for indexing can be seen in code listing \ref{lst:getptr}.
+
+\examplecode{code/pyarray_getptr.c}{Example of original indexing}{lst:getptr}
+
+The version that works with the FHB format chosen for this thesis can
+be seen in code listing \ref{lst:index}. This version works for
+ndarrays of up to two dimensions, and it takes into account whether we
+are indexing into a vector or a matrix. This is a necessary check,
+since vectors are layed out contiguously in the entire block. See
+section \ref{sec:store_vectors} on page \pageref{sec:store_vectors}
+for a description of the vector and matrix layout used in this
+project.
+
+The interesting parts of the code are the parts calculating which block and offset within the block
+the indexed element is located at.
+
+\examplecode{code/index.c}{Example of fhb indexing}{lst:index}
+
+\section{Porting Functions}
+%//Evt. en lille intro inden ufuncs og dette afsnit der beskriver forskellen paa de to kaldformer i NumPy.
+%//Maaske denne lille intro skal staa inden genericbinary functions foerst naevnes? Ellers indsaet bare forud/bagud refs.
+NumPy works as a kind of wrapper that can be fitted to run with a wealth of external libraries.
+When porting functions to run on the Cell BE, there are two distinct ways that NumPy handles function invocations.
+One of them involves calling generic functions that pass control to Python and the other involves calling
+Universal Functions that are implemented in NumPy itself.
+
+It seems the reason for using the generic calls, is so that external libraries (like a library implementing BLAS routines) can
+be used by registering function pointers in Python when installing NumPy with specifications of what external
+libraries to use.
+
+In the following two sections, it is shown how both kinds of these function invocations can be ported to the Cell BE.
+
+\subsection{GenericBinary and Unary Functions}
+
+Some of the element wise functions that operates on ndarrays are
+implemented by calling a generic function in the
+file \file{arrayobject.c}. This type of function takes one or two
+operands as input and an index for the operation to perform.
+
+The generic function then calls python using invocation the function call \texttt{Py\_CallFunc(...)} to
+perform the actual operation. See an example of the function \texttt{GenericBinaryFunction(...)} in code listing \ref{lst:genericbinaryfunction}.
+
+\examplecode{code/genericbinaryfunction.c}{genericbinaryfunction}{lst:genericbinaryfunction}
+
+As an example we consider addition. If two ndarrays are added
+together, the function \texttt{array\_add(...)} placed in the
+file \file{arrayobject.c} is called. The file is shown in code
+listing \ref{lst:array-add}. This function calls the generic function
+with a designated operation id to perform the actual operation.
+
+To replace the existing functionality for adding ndarrays with new
+functionality, it is possible to remove the call to the generic
+function and instead call custom methods that performs the operation
+on the SPE's instead. Both operands are available with the new meta
+data added for use on the Cell BE, so this kind of extension is quite
+simple.
+
+\examplecode{code/array_add.c}{array addition}{lst:array-add}
+
+\subsection{Universal Functions}
+
+The standard \function{less\_equal} operation in NumPy is one of
+several UFUNCS as they are designated in the NumPy manual. This
+section describes the \function{less\_equal} functionality, but
+other \texttt{UFUNCS} in NumPy are implemented in a similar way and
+can thus be modified to run on the Cell BE using a similar procedure
+as the one described in this section.
+
+An element wise less equal operation on a vector and a
+scalar\footnote{Or an array and an array} is performed internally in
+NumPy by calling the function \function{ufunc\_generic\_call(...)},
+from the file \file{ufuncobject.c}, with information about which
+operations to perform and pointers to arguments. Next in the call
+graph is the function \function{PyUFunc\_GenericFunction(...)}.
+
+In this function an important call is made to the function \function{construct\_loop(...)}.\\
+\function{contruct\_loop(...)} calls the function \function{construct\_arrays(...)}
+ and returns a loop object pointer, \variable{UFuncLoopObject*} (show
+struct in illustration etc.). This loop object holds pointers to
+arguments, which are pointers to arrays for argument one, argument two
+and the result argument. Since the second argument is a scalar, it is
+represented as a \struct{PyObject} with a standard header and a value,
+while the first argument and the result object are constructed as
+\struct{PyArrayObject}'s.
+
+The loop object also has a function-pointer registered, that tells
+NumPy which function to call to carry out the \function{less\_equal}
+operation. The pointer points to a function, that at pre-compile time
+exists in the file \file{umathmodule.c.src}. When installing NumPy
+this file is first preprocessed with a substitution step, where
+certain keywords are replaced with actual data types etc. and then the
+different versions of each function is compiled.
+For \function{less\_equal}, a version using floats is created from the
+"template function" named \function{@TYPE@@kind@(...)}. This function
+does the actual computation in a loop that looks as seen in code
+listing \ref{lst:less-equal}.
+
+This loop shows how UFUNCS are implemented in NumPy in general by
+replacing types and operations in the meta file \file{umathmodule.c}.
+The loop is reused with different operations like equal, not\_equal,
+greater, etc. For the \function{less\_equal} operation, the keywords
+"@typ@" and "@OP@" are replaced and the resulting function is seen in
+code listing \ref{lst:less-equal-actual-values}.
+
+\examplecode{code/lessequal_loop.c}{lessequal meta loop}{lst:less-equal}
+\examplecode{code/lessequal_loop_actual_values.c}{lessequal loop with actual values}{lst:less-equal-actual-values}
+
+The name and return type of the function containing the specific loop
+used for \function{less\_equal} with single precision floats is also set by
+exchanging tags in \file{umathmodule.c}. The template prototype can be
+seen in code listing \ref{lst:lessequal-function-name} and the actual
+prototype can be seen in code
+listing \ref{lst:lessequal-function-name-actual-values}.
+
+\examplecode{code/lessequal_function_name.c}{lessequal meta function name}{lst:lessequal-function-name}
+\examplecode{code/lessequal_function_name_actual_values.c}{lessequal actual function name}{lst:lessequal-function-name-actual-values}
+
+In the loop the three operands of the less\_equal operation are used. The operand pointers are stored in the \texttt{bufPtr} pointer
+returned from \texttt{contructloop(...)} call.
+
+The key to making the less\_equal operation work on the Cell BE architecture is to create meta data the describes the data from
+each of the three operands as being placed in data blocks, as corresponding to the FHB layout, and give control to the SPE's by
+calling the dispatcher (see a description of the dispatcher in section \ref{sec:disp} on page \pageref{sec:disp}).
+
+
+An issue that remains open, is where to make changes to the
+functions \function{construct\_loop(...)}
+and \function{contruct\_loop(...)} in order to return pointers to the
+new \variable{blockData} array of pointers instead of the old data
+pointer in the PyArrayObject (see section \ref{sec:extending_numpy}).
+
+%intp is1=steps[0],is2=steps[1],os=steps[2], n=dimensions[0];
+%  //char *i1=args[0], *i2=args[1], *op=args[2];
